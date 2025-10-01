@@ -18,6 +18,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import com.csugprojects.recipeapp.domain.model.Category
+import com.csugprojects.recipeapp.domain.model.Ingredient
+import com.csugprojects.recipeapp.domain.model.Name
 import com.csugprojects.recipeapp.domain.model.Recipe
 import com.csugprojects.recipeapp.domain.repository.RecipeRepository
 import com.csugprojects.recipeapp.ui.RecipeViewModel
@@ -25,11 +28,55 @@ import com.csugprojects.recipeapp.util.Result
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
+// --- Mock Repository Implementation (Fixes Unimplemented Members Error) ---
+private class MockRecipeRepository : RecipeRepository {
+    private val mockRecipe = Recipe(
+        id = "52772",
+        title = "Chicken Teriyaki",
+        imageUrl = "https://www.themealdb.com/images/media/meals/g046bb1663960946.jpg",
+        instructions = "This is a placeholder recipe for the preview. It includes all the visual elements but no real networking functionality. The main app uses the real repository.",
+        ingredients = listOf(
+            Ingredient("Chicken", "1 lb"),
+            Ingredient("Soy Sauce", "1/4 cup"),
+            Ingredient("Sugar", "2 tbsp")
+        ),
+        isFavorite = false
+    )
+
+    override suspend fun searchRecipes(query: String): Result<List<Recipe>> {
+        return Result.Success(listOf(mockRecipe))
+    }
+
+    override suspend fun getRecipeDetails(id: String): Result<Recipe> {
+        return Result.Success(mockRecipe)
+    }
+
+    override fun getFavoriteRecipes(): Flow<List<Recipe>> {
+        return flow { emit(emptyList()) }
+    }
+
+    override suspend fun addFavorite(recipe: Recipe) {}
+    override suspend fun removeFavorite(recipeId: String) {}
+
+    // --- New Methods Added to Implement the Updated RecipeRepository Interface ---
+    override suspend fun getRandomRecipe(): Result<Recipe> = Result.Success(mockRecipe)
+    override suspend fun getCategories(): Result<List<Category>> = Result.Success(emptyList())
+    override suspend fun listIngredients(): Result<List<Name>> = Result.Success(emptyList())
+    override suspend fun listAreas(): Result<List<Name>> = Result.Success(emptyList())
+    override suspend fun filterByCategory(category: String): Result<List<Recipe>> = Result.Success(emptyList())
+    override suspend fun filterByArea(area: String): Result<List<Recipe>> = Result.Success(emptyList())
+    override suspend fun filterByIngredient(ingredient: String): Result<List<Recipe>> = Result.Success(emptyList())
+}
+// --- End Mock Repository ---
+
 @Composable
 fun RecipeDetailScreen(
     recipeId: String,
     viewModel: RecipeViewModel
 ) {
+    // CollectAsState is an extension function, requires androidx.compose.runtime.collectAsState
+    val favoriteRecipes by viewModel.favoriteRecipes.collectAsState()
+
     var recipeState by remember { mutableStateOf<Result<Recipe>>(Result.Loading) }
     var isFavorite by remember { mutableStateOf(false) }
 
@@ -39,10 +86,9 @@ fun RecipeDetailScreen(
         }
     }
 
-    LaunchedEffect(viewModel.favoriteRecipes.collectAsState().value) {
-        viewModel.favoriteRecipes.collect { favorites ->
-            isFavorite = favorites.any { it.id == recipeId }
-        }
+    // Update isFavorite state whenever the list of favorites changes
+    LaunchedEffect(favoriteRecipes) {
+        isFavorite = favoriteRecipes.any { it.id == recipeId }
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -51,22 +97,21 @@ fun RecipeDetailScreen(
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             }
             is Result.Success -> {
+                // The compiler guarantees 'state.data' is a non-null Recipe object
                 val recipe = state.data
-                if (recipe != null) {
-                    RecipeDetailContent(
-                        recipe = recipe,
-                        isFavorite = isFavorite,
-                        onFavoriteClick = {
-                            if (isFavorite) {
-                                viewModel.removeFavorite(recipe.id)
-                            } else {
-                                viewModel.addFavorite(recipe)
-                            }
+
+                // Removed: if (recipe != null) { ... }
+                RecipeDetailContent(
+                    recipe = recipe, // Use the non-null recipe object directly
+                    isFavorite = isFavorite,
+                    onFavoriteClick = {
+                        if (isFavorite) {
+                            viewModel.removeFavorite(recipe.id)
+                        } else {
+                            viewModel.addFavorite(recipe)
                         }
-                    )
-                } else {
-                    Text("Recipe not found.", modifier = Modifier.align(Alignment.Center))
-                }
+                    }
+                )
             }
             is Result.Error -> {
                 Text(
@@ -125,6 +170,7 @@ fun RecipeDetailContent(
                 modifier = Modifier.padding(bottom = 8.dp)
             )
 
+            // Ingredients
             Text(
                 text = "Ingredients",
                 style = MaterialTheme.typography.titleLarge,
@@ -139,6 +185,7 @@ fun RecipeDetailContent(
                 )
             }
 
+            // Instructions
             Text(
                 text = "Instructions",
                 style = MaterialTheme.typography.titleLarge,
@@ -153,36 +200,10 @@ fun RecipeDetailContent(
     }
 }
 
-private class MockRecipeRepository : RecipeRepository {
-    override suspend fun searchRecipes(query: String): Result<List<Recipe>> {
-        return Result.Success(emptyList())
-    }
-
-    override suspend fun getRecipeDetails(id: String): Result<Recipe> {
-        val mockRecipe = Recipe(
-            id = id,
-            title = "Preview Recipe",
-            imageUrl = "https://www.themealdb.com/images/media/meals/g046bb1663960946.jpg",
-            instructions = "This is a placeholder recipe for the preview.",
-            ingredients = listOf(
-                com.csugprojects.recipeapp.domain.model.Ingredient("Flour", "1 cup"),
-                com.csugprojects.recipeapp.domain.model.Ingredient("Milk", "1/2 cup")
-            )
-        )
-        return Result.Success(mockRecipe)
-    }
-
-    override fun getFavoriteRecipes(): Flow<List<Recipe>> {
-        return flow { emit(emptyList()) }
-    }
-
-    override suspend fun addFavorite(recipe: Recipe) {}
-    override suspend fun removeFavorite(recipeId: String) {}
-}
-
 @Preview
 @Composable
 fun RecipeDetailScreenPreview() {
+    // This preview now uses the fully implemented MockRepository
     RecipeDetailScreen(
         recipeId = "52772",
         viewModel = viewModel(factory = object : androidx.lifecycle.ViewModelProvider.Factory {
