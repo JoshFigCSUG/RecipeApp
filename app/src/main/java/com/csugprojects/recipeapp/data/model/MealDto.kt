@@ -1,8 +1,9 @@
 package com.csugprojects.recipeapp.data.model
 
-import com.csugprojects.recipeapp.domain.model.Ingredient
-import com.csugprojects.recipeapp.domain.model.Recipe
 import com.google.gson.annotations.SerializedName
+import com.csugprojects.recipeapp.domain.model.Recipe
+import com.csugprojects.recipeapp.domain.model.Ingredient
+import com.csugprojects.recipeapp.data.local.RecipeEntity
 
 data class MealListDto(
     @SerializedName("meals")
@@ -117,6 +118,8 @@ data class MealDto(
         for (i in ingredientNames.indices) {
             val name = ingredientNames[i]?.trim()
             val measure = measures[i]?.trim()
+
+            // Only add if both the name and the measure are present (not null or blank)
             if (!name.isNullOrBlank() && !measure.isNullOrBlank()) {
                 ingredients.add(Ingredient(name, measure))
             }
@@ -127,7 +130,8 @@ data class MealDto(
             title = this.strMeal,
             imageUrl = this.strMealThumb,
             instructions = this.strInstructions,
-            ingredients = ingredients
+            ingredients = ingredients,
+            isFavorite = false // Default to false, status is determined by the Repository
         )
     }
 }
