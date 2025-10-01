@@ -2,6 +2,7 @@ package com.csugprojects.recipeapp.ui.list
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
@@ -11,7 +12,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.csugprojects.recipeapp.domain.model.Category
 import com.csugprojects.recipeapp.ui.RecipeViewModel
+import com.csugprojects.recipeapp.util.Result
+import kotlin.text.isLetter
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -24,6 +28,7 @@ fun RecipeListScreen(
     val searchQuery by viewModel.searchQuery
     val isLoading by viewModel.isLoading
     val errorMessage by viewModel.errorMessage
+    val categoriesState by viewModel.categories
 
     // State for the M3 SearchBar's active state (controls if it is expanded)
     var active by rememberSaveable { mutableStateOf(false) }
@@ -34,12 +39,14 @@ fun RecipeListScreen(
             query = searchQuery,
             onQueryChange = { viewModel.onSearchQueryChanged(it) },
             onSearch = {
-                viewModel.searchRecipes()
+                // If the query is a single letter, search by first letter. Otherwise, search by name.
+                val searchType = if (it.length == 1 && it.first().isLetter()) "firstLetter" else "name"
+                viewModel.searchRecipes() // Calling generic search in this simple implementation
                 active = false // Close the virtual keyboard/search bar after search
             },
             active = active,
             onActiveChange = { active = it },
-            placeholder = { Text("Search for recipes by name") },
+            placeholder = { Text("Search recipes by name or filter...") },
             leadingIcon = {
                 Icon(Icons.Default.Search, contentDescription = null)
             },
@@ -47,11 +54,20 @@ fun RecipeListScreen(
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
-            // This content is shown when 'active' is true (e.g., for recent searches)
-            // We leave it empty for a simple implementation.
+            // Content shown when search bar is active (e.g., list of recent searches)
+            Text(
+                text = "Type to search or use filters below.",
+                modifier = Modifier.padding(16.dp)
+            )
         }
         // --- End SearchBar ---
 
+        // --- Horizontal Filter Bar (New Feature) ---
+        CategoryFilterBar(categoriesState = categoriesState, onFilterSelected = { categoryName ->
+            viewModel.filterAndDisplayRecipes("category", categoryName)
+        })
+
+        // --- Main Content Display ---
         if (isLoading) {
             Box(
                 modifier = Modifier.fillMaxSize(),
@@ -87,6 +103,49 @@ fun RecipeListScreen(
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun CategoryFilterBar(
+    categoriesState: Result<List<Category>>,
+    onFilterSelected: (String) -> Unit
+) {
+    when (categoriesState) {
+        is Result.Loading -> {
+            // Show a simple loading indicator for the filters
+            CircularProgressIndicator(
+                modifier = Modifier
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .size(24.dp),
+                strokeWidth = 2.dp
+            )
+        }
+        is Result.Success -> {
+            LazyRow(
+                contentPadding = PaddingValues(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                categoriesState.data.take(10).forEach { category -> // Limit to 10 for display
+                    item(key = category.id) {
+                        FilterChip(
+                            selected = false, // Add logic to track selection if needed
+                            onClick = { onFilterSelected(category.name) },
+                            label = { Text(category.name) }
+                        )
+                    }
+                }
+            }
+        }
+        is Result.Error -> {
+            // Optionally display a small error for the filter bar
+            Text(
+                "Could not load filters.",
+                style = MaterialTheme.typography.labelSmall,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+            )
         }
     }
 }
