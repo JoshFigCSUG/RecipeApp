@@ -19,17 +19,17 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.csugprojects.recipeapp.util.Result
-// UPDATED IMPORTS
-import androidx.compose.runtime.collectAsState // Corrected Flow Import
-import com.csugprojects.recipeapp.ui.viewmodel.GlobalRecipeOperationsViewModel // New ViewModel
-// ADDED IMPORT for RecipeCard (defined in RecipeCard.kt in this package)
+import androidx.compose.runtime.collectAsState
+import com.csugprojects.recipeapp.ui.viewmodel.GlobalRecipeOperationsViewModel
 import com.csugprojects.recipeapp.ui.list.RecipeCard
+import com.csugprojects.recipeapp.domain.model.Recipe
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    // CHANGED PARAMETER: Use the GlobalRecipeOperationsViewModel
     viewModel: GlobalRecipeOperationsViewModel,
     onRecipeClick: (String) -> Unit,
     onSearchClick: () -> Unit
@@ -37,10 +37,10 @@ fun HomeScreen(
     // State to hold the result of the random recipe fetch
     var randomRecipeState by remember { mutableStateOf<Result<com.csugprojects.recipeapp.domain.model.Recipe>>(Result.Loading) }
 
-    // NEW: Collect recently viewed recipes state
+    // Collect recently viewed recipes state
     val recentlyViewed by viewModel.recentlyViewed.collectAsState()
 
-    // Also collect favorites to correctly mark them in the small cards
+    // Collect global favorites state (Source of truth for isFavorite)
     val favoriteRecipes by viewModel.favoriteRecipes.collectAsState()
     val favoriteIds = remember(favoriteRecipes) {
         favoriteRecipes.map { it.id }.toSet()
@@ -56,11 +56,11 @@ fun HomeScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp), // Only apply horizontal padding to column
+            .padding(horizontal = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
 
-        // --- NEW: Recently Viewed Section (Horizontal Scroll) ---
+        // --- Recently Viewed Section (Small Cards) ---
         if (recentlyViewed.isNotEmpty()) {
             Text(
                 text = "Recently Viewed",
@@ -75,11 +75,11 @@ fun HomeScreen(
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 items(recentlyViewed) { recipe ->
+                    // Correctly derives isFavorite from global state
                     SmallRecipeCard(
                         recipe = recipe.copy(isFavorite = favoriteIds.contains(recipe.id)),
                         onClick = { onRecipeClick(recipe.id) },
                         onFavoriteClick = { isFavorite ->
-                            // Use Global ViewModel for favorite operations
                             if (isFavorite) viewModel.removeFavorite(recipe.id) else viewModel.addFavorite(recipe)
                         }
                     )
@@ -87,7 +87,6 @@ fun HomeScreen(
             }
             Spacer(modifier = Modifier.height(24.dp))
         }
-        // --- END Recently Viewed Section ---
 
         Text(
             text = "Recipe of the Moment",
@@ -102,13 +101,12 @@ fun HomeScreen(
             }
             is Result.Success -> {
                 state.data?.let { recipe ->
-                    // Ensure the RecipeCard is marked favorite if it is
+                    // FIX: Ensure the isFavorite flag is always derived from the live favoriteIds set
                     val currentIsFavorite = favoriteIds.contains(recipe.id)
                     RecipeCard(
-                        recipe = recipe.copy(isFavorite = currentIsFavorite),
+                        recipe = recipe.copy(isFavorite = currentIsFavorite), // Inject live status
                         onClick = { onRecipeClick(recipe.id) },
                         onFavoriteClick = { isFavorite ->
-                            // Use Global ViewModel for favorite operations
                             if (isFavorite) viewModel.removeFavorite(recipe.id) else viewModel.addFavorite(recipe)
                         }
                     )
@@ -133,16 +131,15 @@ fun HomeScreen(
     }
 }
 
-// NEW COMPOSABLE: A simplified Recipe Card for horizontal lists
 @Composable
 fun SmallRecipeCard(
-    recipe: com.csugprojects.recipeapp.domain.model.Recipe,
+    recipe: Recipe,
     onClick: () -> Unit,
     onFavoriteClick: (Boolean) -> Unit
 ) {
     Card(
         modifier = Modifier
-            .width(160.dp) // Fixed width for horizontal scrolling
+            .width(160.dp)
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
@@ -151,7 +148,7 @@ fun SmallRecipeCard(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(100.dp) // Smaller height for a compact card
+                    .height(100.dp)
             ) {
                 AsyncImage(
                     model = recipe.imageUrl,
@@ -176,7 +173,10 @@ fun SmallRecipeCard(
             }
             Text(
                 text = recipe.title,
-                style = MaterialTheme.typography.titleSmall,
+                style = MaterialTheme.typography.titleSmall.copy(
+                    fontFamily = FontFamily.Cursive,
+                    fontWeight = FontWeight.Bold
+                ),
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp),
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
