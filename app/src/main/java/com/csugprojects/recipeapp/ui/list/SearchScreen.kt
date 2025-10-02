@@ -37,18 +37,20 @@ fun RecipeListScreen(
     val isLoading by listViewModel.isLoading
     val errorMessage by listViewModel.errorMessage
     val categoriesState by listViewModel.categories
-    val areasState by listViewModel.areas
-
-    // NEW: Collect selected filter states
-    val selectedCategory by listViewModel.selectedCategory
-    val selectedArea by listViewModel.selectedArea
-    val selectedIngredient by listViewModel.selectedIngredient
 
     // Collect global favorites state from Global ViewModel
     val favoriteRecipesList by globalViewModel.favoriteRecipes.collectAsState()
     val favoriteIds = remember(favoriteRecipesList) {
         favoriteRecipesList.map { it.id }.toSet()
     }
+
+    // Collect Areas state for filtering
+    val areasState by listViewModel.areas
+
+    // Collect selected filter states
+    val selectedCategory by listViewModel.selectedCategory
+    val selectedArea by listViewModel.selectedArea
+    val selectedIngredient by listViewModel.selectedIngredient
 
     var active by rememberSaveable { mutableStateOf(false) }
 
@@ -58,12 +60,13 @@ fun RecipeListScreen(
             query = searchQuery,
             onQueryChange = { listViewModel.onSearchQueryChanged(it) },
             onSearch = {
+                // FIX/CLEANUP: The search query is passed directly for a broad search (name and ingredient)
                 listViewModel.searchRecipes(favoriteIds)
                 active = false
             },
             active = active,
             onActiveChange = { active = it },
-            placeholder = { Text("Search recipes by name or filter...") },
+            placeholder = { Text("Search recipes by name or ingredient...") },
             leadingIcon = {
                 Icon(Icons.Default.Search, contentDescription = null)
             },
@@ -84,7 +87,7 @@ fun RecipeListScreen(
             Text("Categories", style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(start = 16.dp, top = 8.dp))
             CategoryFilterBar(
                 categoriesState = categoriesState,
-                selectedFilter = selectedCategory, // Pass selected state
+                selectedFilter = selectedCategory,
                 favoriteIds = favoriteIds,
                 listViewModel = listViewModel
             )
@@ -95,7 +98,7 @@ fun RecipeListScreen(
             Text("Areas", style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(start = 16.dp))
             AreaFilterBar(
                 areasState = areasState,
-                selectedFilter = selectedArea, // Pass selected state
+                selectedFilter = selectedArea,
                 favoriteIds = favoriteIds,
                 listViewModel = listViewModel
             )
@@ -105,7 +108,7 @@ fun RecipeListScreen(
             // --- 3. Horizontal Ingredient Filter Bar ---
             Text("Common Ingredients", style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(start = 16.dp))
             IngredientFilterBar(
-                selectedFilter = selectedIngredient, // Pass selected state
+                selectedFilter = selectedIngredient,
                 favoriteIds = favoriteIds,
                 listViewModel = listViewModel
             )
@@ -158,7 +161,7 @@ fun RecipeListScreen(
     }
 }
 
-// --- 1. Category Filter Bar (FIXED & PERSISTENT) ---
+// --- Filter Composables ---
 @Composable
 fun CategoryFilterBar(
     categoriesState: Result<List<Category>>,
@@ -183,7 +186,7 @@ fun CategoryFilterBar(
             ) {
                 items(categoriesState.data.take(10), key = { it.id }) { category ->
                     FilterChip(
-                        selected = selectedFilter == category.name, // PERSISTENCE FIX
+                        selected = selectedFilter == category.name,
                         onClick = {
                             listViewModel.filterAndDisplayRecipes("category", category.name, favoriteIds)
                         },
@@ -202,8 +205,6 @@ fun CategoryFilterBar(
     }
 }
 
-
-// --- 2. Area Filter Bar (FIXED & PERSISTENT) ---
 @Composable
 fun AreaFilterBar(
     areasState: Result<List<Name>>,
@@ -228,7 +229,7 @@ fun AreaFilterBar(
             ) {
                 items(areasState.data.take(10), key = { it.name }) { area ->
                     FilterChip(
-                        selected = selectedFilter == area.name, // PERSISTENCE FIX
+                        selected = selectedFilter == area.name,
                         onClick = {
                             listViewModel.filterAndDisplayRecipes("area", area.name, favoriteIds)
                         },
@@ -247,7 +248,6 @@ fun AreaFilterBar(
     }
 }
 
-// --- 3. Ingredient Filter Bar (FIXED & PERSISTENT) ---
 @Composable
 fun IngredientFilterBar(
     selectedFilter: String?,
@@ -264,7 +264,7 @@ fun IngredientFilterBar(
     ) {
         items(commonIngredients) { ingredient ->
             FilterChip(
-                selected = selectedFilter == ingredient, // PERSISTENCE FIX
+                selected = selectedFilter == ingredient,
                 onClick = {
                     listViewModel.filterAndDisplayRecipes("ingredient", ingredient, favoriteIds)
                 },
