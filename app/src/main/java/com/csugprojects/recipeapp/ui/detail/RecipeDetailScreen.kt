@@ -28,57 +28,21 @@ import com.csugprojects.recipeapp.util.Result
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
-// --- Mock Repository Implementation (Fixes Unimplemented Members Error) ---
-private class MockRecipeRepository : RecipeRepository {
-    private val mockRecipe = Recipe(
-        id = "52772",
-        title = "Chicken Teriyaki",
-        imageUrl = "https://www.themealdb.com/images/media/meals/g046bb1663960946.jpg",
-        instructions = "This is a placeholder recipe for the preview. It includes all the visual elements but no real networking functionality. The main app uses the real repository.",
-        ingredients = listOf(
-            Ingredient("Chicken", "1 lb"),
-            Ingredient("Soy Sauce", "1/4 cup"),
-            Ingredient("Sugar", "2 tbsp")
-        ),
-        isFavorite = false
-    )
-
-    override suspend fun searchRecipes(query: String): Result<List<Recipe>> {
-        return Result.Success(listOf(mockRecipe))
-    }
-
-    override suspend fun getRecipeDetails(id: String): Result<Recipe> {
-        return Result.Success(mockRecipe)
-    }
-
-    override fun getFavoriteRecipes(): Flow<List<Recipe>> {
-        return flow { emit(emptyList()) }
-    }
-
-    override suspend fun addFavorite(recipe: Recipe) {}
-    override suspend fun removeFavorite(recipeId: String) {}
-
-    // --- New Methods Added to Implement the Updated RecipeRepository Interface ---
-    override suspend fun getRandomRecipe(): Result<Recipe> = Result.Success(mockRecipe)
-    override suspend fun getCategories(): Result<List<Category>> = Result.Success(emptyList())
-    override suspend fun listIngredients(): Result<List<Name>> = Result.Success(emptyList())
-    override suspend fun listAreas(): Result<List<Name>> = Result.Success(emptyList())
-    override suspend fun filterByCategory(category: String): Result<List<Recipe>> = Result.Success(emptyList())
-    override suspend fun filterByArea(area: String): Result<List<Recipe>> = Result.Success(emptyList())
-    override suspend fun filterByIngredient(ingredient: String): Result<List<Recipe>> = Result.Success(emptyList())
-}
-// --- End Mock Repository ---
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecipeDetailScreen(
     recipeId: String,
     viewModel: RecipeViewModel
 ) {
-    // CollectAsState is an extension function, requires androidx.compose.runtime.collectAsState
+    // Collect the live state of favorites from the ViewModel
     val favoriteRecipes by viewModel.favoriteRecipes.collectAsState()
 
     var recipeState by remember { mutableStateOf<Result<Recipe>>(Result.Loading) }
-    var isFavorite by remember { mutableStateOf(false) }
+
+    // isFavorite status is derived from the live collected list
+    val isFavorite = remember(favoriteRecipes) {
+        favoriteRecipes.any { it.id == recipeId }
+    }
 
     LaunchedEffect(recipeId) {
         viewModel.getRecipeDetails(recipeId) { result ->
@@ -86,39 +50,42 @@ fun RecipeDetailScreen(
         }
     }
 
-    // Update isFavorite state whenever the list of favorites changes
-    LaunchedEffect(favoriteRecipes) {
-        isFavorite = favoriteRecipes.any { it.id == recipeId }
-    }
+    // --- UI Fix: Using Scaffold for correct system bar spacing ---
+    Scaffold(
+        topBar = {
+            TopAppBar(title = { Text("Recipe Details") })
+        },
+        modifier = Modifier.fillMaxSize()
+    ) { paddingValues ->
+        Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+            when (val state = recipeState) {
+                is Result.Loading -> {
+                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                }
+                is Result.Success -> {
+                    // Functional Fix: Use the guaranteed non-null Recipe object directly
+                    val recipe = state.data
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        when (val state = recipeState) {
-            is Result.Loading -> {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-            }
-            is Result.Success -> {
-                // The compiler guarantees 'state.data' is a non-null Recipe object
-                val recipe = state.data
-
-                // Removed: if (recipe != null) { ... }
-                RecipeDetailContent(
-                    recipe = recipe, // Use the non-null recipe object directly
-                    isFavorite = isFavorite,
-                    onFavoriteClick = {
-                        if (isFavorite) {
-                            viewModel.removeFavorite(recipe.id)
-                        } else {
-                            viewModel.addFavorite(recipe)
-                        }
-                    }
-                )
-            }
-            is Result.Error -> {
-                Text(
-                    state.exception.message ?: "An error occurred",
-                    modifier = Modifier.align(Alignment.Center),
-                    color = Color.Red
-                )
+                    RecipeDetailContent(
+                        recipe = recipe,
+                        isFavorite = isFavorite,
+                        onFavoriteClick = {
+                            if (isFavorite) {
+                                viewModel.removeFavorite(recipe.id)
+                            } else {
+                                viewModel.addFavorite(recipe)
+                            }
+                        },
+                        modifier = Modifier.fillMaxSize() // Fill the padded space
+                    )
+                }
+                is Result.Error -> {
+                    Text(
+                        state.exception.message ?: "An error occurred",
+                        modifier = Modifier.align(Alignment.Center),
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
             }
         }
     }
@@ -128,13 +95,13 @@ fun RecipeDetailScreen(
 fun RecipeDetailContent(
     recipe: Recipe,
     isFavorite: Boolean,
-    onFavoriteClick: () -> Unit
+    onFavoriteClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val scrollState = rememberScrollState()
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
+        modifier = modifier
             .verticalScroll(scrollState)
     ) {
         Box(
@@ -200,10 +167,39 @@ fun RecipeDetailContent(
     }
 }
 
+// --- Mock Repository Implementation (for Preview) ---
+private class MockRecipeRepository : RecipeRepository {
+    // ... (Mock implementation is correct and remains the same)
+    private val mockRecipe = Recipe(
+        id = "52772",
+        title = "Chicken Teriyaki",
+        imageUrl = "https://www.themealdb.com/images/media/meals/g046bb1663960946.jpg",
+        instructions = "This is a placeholder recipe for the preview. It includes all the visual elements but no real networking functionality. The main app uses the real repository.",
+        ingredients = listOf(
+            Ingredient("Chicken", "1 lb"),
+            Ingredient("Soy Sauce", "1/4 cup"),
+            Ingredient("Sugar", "2 tbsp")
+        ),
+        isFavorite = false
+    )
+
+    override suspend fun searchRecipes(query: String): Result<List<Recipe>> = Result.Success(listOf(mockRecipe))
+    override suspend fun getRecipeDetails(id: String): Result<Recipe> = Result.Success(mockRecipe)
+    override fun getFavoriteRecipes(): Flow<List<Recipe>> = flow { emit(emptyList()) }
+    override suspend fun addFavorite(recipe: Recipe) {}
+    override suspend fun removeFavorite(recipeId: String) {}
+    override suspend fun getRandomRecipe(): Result<Recipe> = Result.Success(mockRecipe)
+    override suspend fun getCategories(): Result<List<Category>> = Result.Success(emptyList())
+    override suspend fun listIngredients(): Result<List<Name>> = Result.Success(emptyList())
+    override suspend fun listAreas(): Result<List<Name>> = Result.Success(emptyList())
+    override suspend fun filterByCategory(category: String): Result<List<Recipe>> = Result.Success(emptyList())
+    override suspend fun filterByArea(area: String): Result<List<Recipe>> = Result.Success(emptyList())
+    override suspend fun filterByIngredient(ingredient: String): Result<List<Recipe>> = Result.Success(emptyList())
+}
+
 @Preview
 @Composable
 fun RecipeDetailScreenPreview() {
-    // This preview now uses the fully implemented MockRepository
     RecipeDetailScreen(
         recipeId = "52772",
         viewModel = viewModel(factory = object : androidx.lifecycle.ViewModelProvider.Factory {

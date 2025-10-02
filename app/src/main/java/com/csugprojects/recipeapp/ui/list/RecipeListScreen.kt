@@ -30,7 +30,12 @@ fun RecipeListScreen(
     val errorMessage by viewModel.errorMessage
     val categoriesState by viewModel.categories
 
-    // State for the M3 SearchBar's active state (controls if it is expanded)
+    // Functional Fix: Collect the live state of favorites for immediate UI updates
+    val favoriteRecipesList by viewModel.favoriteRecipes.collectAsState()
+    val favoriteIds = remember(favoriteRecipesList) {
+        favoriteRecipesList.map { it.id }.toSet()
+    }
+
     var active by rememberSaveable { mutableStateOf(false) }
 
     Column(modifier = Modifier.fillMaxSize()) {
@@ -39,10 +44,9 @@ fun RecipeListScreen(
             query = searchQuery,
             onQueryChange = { viewModel.onSearchQueryChanged(it) },
             onSearch = {
-                // If the query is a single letter, search by first letter. Otherwise, search by name.
                 val searchType = if (it.length == 1 && it.first().isLetter()) "firstLetter" else "name"
-                viewModel.searchRecipes() // Calling generic search in this simple implementation
-                active = false // Close the virtual keyboard/search bar after search
+                viewModel.searchRecipes()
+                active = false
             },
             active = active,
             onActiveChange = { active = it },
@@ -54,7 +58,6 @@ fun RecipeListScreen(
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
-            // Content shown when search bar is active (e.g., list of recent searches)
             Text(
                 text = "Type to search or use filters below.",
                 modifier = Modifier.padding(16.dp)
@@ -90,8 +93,10 @@ fun RecipeListScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 items(recipes) { recipe ->
+                    val currentIsFavorite = favoriteIds.contains(recipe.id)
                     RecipeCard(
-                        recipe = recipe,
+                        // Functional Fix: Pass a copy of the recipe with the live favorite status
+                        recipe = recipe.copy(isFavorite = currentIsFavorite),
                         onClick = { onRecipeClick(recipe.id) },
                         onFavoriteClick = { isFavorite ->
                             if (isFavorite) {
@@ -114,7 +119,6 @@ fun CategoryFilterBar(
 ) {
     when (categoriesState) {
         is Result.Loading -> {
-            // Show a simple loading indicator for the filters
             CircularProgressIndicator(
                 modifier = Modifier
                     .padding(horizontal = 16.dp, vertical = 8.dp)
@@ -128,10 +132,10 @@ fun CategoryFilterBar(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                categoriesState.data.take(10).forEach { category -> // Limit to 10 for display
+                categoriesState.data.take(10).forEach { category ->
                     item(key = category.id) {
                         FilterChip(
-                            selected = false, // Add logic to track selection if needed
+                            selected = false,
                             onClick = { onFilterSelected(category.name) },
                             label = { Text(category.name) }
                         )
@@ -140,7 +144,6 @@ fun CategoryFilterBar(
             }
         }
         is Result.Error -> {
-            // Optionally display a small error for the filter bar
             Text(
                 "Could not load filters.",
                 style = MaterialTheme.typography.labelSmall,
