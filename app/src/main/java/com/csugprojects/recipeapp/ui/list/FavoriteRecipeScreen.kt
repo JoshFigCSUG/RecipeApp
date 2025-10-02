@@ -3,8 +3,6 @@ package com.csugprojects.recipeapp.ui.list
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -18,30 +16,27 @@ import com.csugprojects.recipeapp.ui.RecipeViewModel
 @Composable
 fun FavoriteRecipeScreen(
     viewModel: RecipeViewModel,
-    onRecipeClick: (String) -> Unit,
-    onBackClick: () -> Unit
+    onRecipeClick: (String) -> Unit
+    // Removed: onBackClick: () -> Unit
 ) {
-    // Collect the live stream of favorite recipes
     val favoriteRecipes by viewModel.favoriteRecipes.collectAsState()
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Your Favorite Recipes") },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                }
-            )
-        },
+    // UI Fix: Use a simple Column/Box structure as Scaffold is handled in MainActivity
+    Column(
         modifier = Modifier.fillMaxSize()
-    ) { paddingValues ->
+    ) {
+        // Use a simple text title instead of TopAppBar for this inner screen
+        Text(
+            text = "Your Favorites",
+            style = MaterialTheme.typography.headlineMedium,
+            modifier = Modifier.padding(top = 16.dp, start = 16.dp)
+        )
+
         if (favoriteRecipes.isEmpty()) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(paddingValues),
+                    .weight(1f), // Take remaining space
                 contentAlignment = Alignment.Center
             ) {
                 Text("You haven't saved any recipes yet.")
@@ -50,20 +45,19 @@ fun FavoriteRecipeScreen(
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(paddingValues),
+                    .weight(1f),
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 items(favoriteRecipes) { recipe ->
                     RecipeCard(
-                        // Since this list only contains favorites, isFavorite is always true
                         recipe = recipe.copy(isFavorite = true),
                         onClick = { onRecipeClick(recipe.id) },
                         onFavoriteClick = { isFavorite ->
+                            // Functional fix: Logic remains the same, but the UI should update via the flow
                             if (isFavorite) {
                                 viewModel.removeFavorite(recipe.id)
                             } else {
-                                // Should not happen in this screen, but included for completeness
                                 viewModel.addFavorite(recipe)
                             }
                         }

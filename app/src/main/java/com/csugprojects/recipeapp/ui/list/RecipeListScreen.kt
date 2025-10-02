@@ -23,6 +23,7 @@ import kotlin.text.isLetter
 fun RecipeListScreen(
     viewModel: RecipeViewModel,
     onRecipeClick: (String) -> Unit
+    // Removed: onFavoritesClick: () -> Unit
 ) {
     val recipes by viewModel.recipes
     val searchQuery by viewModel.searchQuery
@@ -54,6 +55,7 @@ fun RecipeListScreen(
             leadingIcon = {
                 Icon(Icons.Default.Search, contentDescription = null)
             },
+            // Removed: trailingIcon for Favorites, as it is now in the Bottom Bar
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 8.dp)
@@ -95,7 +97,6 @@ fun RecipeListScreen(
                 items(recipes) { recipe ->
                     val currentIsFavorite = favoriteIds.contains(recipe.id)
                     RecipeCard(
-                        // Functional Fix: Pass a copy of the recipe with the live favorite status
                         recipe = recipe.copy(isFavorite = currentIsFavorite),
                         onClick = { onRecipeClick(recipe.id) },
                         onFavoriteClick = { isFavorite ->
@@ -111,7 +112,7 @@ fun RecipeListScreen(
         }
     }
 }
-
+// CategoryFilterBar composable remains unchanged
 @Composable
 fun CategoryFilterBar(
     categoriesState: Result<List<Category>>,
