@@ -8,7 +8,9 @@ data class Recipe(
     val imageUrl: String?,
     val instructions: String?,
     val ingredients: List<Ingredient>,
-    val isFavorite: Boolean = false // Added to handle UI state
+    val category: String?, // NEW FIELD
+    val area: String?,      // NEW FIELD (Cuisine)
+    val isFavorite: Boolean = false
 ) {
     fun toRecipeEntity(): RecipeEntity {
         return RecipeEntity(
@@ -16,7 +18,9 @@ data class Recipe(
             title = this.title,
             imageUrl = this.imageUrl,
             instructions = this.instructions,
-            ingredients = this.ingredients
+            ingredients = this.ingredients,
+            category = this.category, // NEW FIELD
+            area = this.area          // NEW FIELD
         )
     }
 }

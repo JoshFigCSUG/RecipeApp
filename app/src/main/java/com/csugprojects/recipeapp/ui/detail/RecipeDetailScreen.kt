@@ -109,7 +109,7 @@ fun RecipeDetailScreen(
     }
 }
 
-// --- Mock Repository for Preview ---
+// --- Mock Repository for Preview (FIXED) ---
 private class MockRecipeRepository : RecipeRepository {
     private val mockRecipe = Recipe(
         id = "52772",
@@ -121,6 +121,8 @@ private class MockRecipeRepository : RecipeRepository {
             Ingredient("Soy Sauce", "1/4 cup"),
             Ingredient("Sugar", "2 tbsp")
         ),
+        category = "Chicken", // FIXED: Added value for category
+        area = "Japanese",     // FIXED: Added value for area
         isFavorite = false
     )
 
@@ -183,6 +185,30 @@ fun RecipeDetailContent(
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
+
+            // Display Category and Area if available
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                recipe.category?.let {
+                    Text(
+                        text = "Category: $it",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.secondary
+                    )
+                }
+                recipe.area?.let {
+                    Text(
+                        text = "Cuisine: $it",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.secondary
+                    )
+                }
+            }
+
 
             // Ingredients
             Text(

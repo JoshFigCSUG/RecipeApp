@@ -11,7 +11,9 @@ data class RecipeEntity(
     val title: String,
     val imageUrl: String?,
     val instructions: String?,
-    val ingredients: List<Ingredient>
+    val ingredients: List<Ingredient>,
+    val category: String?, // NEW FIELD
+    val area: String?      // NEW FIELD
 ) {
     fun toRecipe(): Recipe {
         return Recipe(
@@ -19,7 +21,9 @@ data class RecipeEntity(
             title = this.title,
             imageUrl = this.imageUrl,
             instructions = this.instructions,
-            ingredients = this.ingredients
+            ingredients = this.ingredients,
+            category = this.category, // NEW MAPPING
+            area = this.area,         // NEW MAPPING
         )
     }
 }
