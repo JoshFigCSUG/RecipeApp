@@ -15,18 +15,18 @@ import androidx.compose.ui.unit.dp
 import com.csugprojects.recipeapp.domain.model.Category
 import com.csugprojects.recipeapp.util.Result
 import kotlin.text.isLetter
-// CORRECTED IMPORTS
 import androidx.compose.runtime.collectAsState
 import com.csugprojects.recipeapp.ui.viewmodel.GlobalRecipeOperationsViewModel
 import com.csugprojects.recipeapp.ui.viewmodel.RecipeListViewModel
-// ADDED IMPORT for RecipeCard
 import com.csugprojects.recipeapp.ui.list.RecipeCard
+import com.csugprojects.recipeapp.domain.model.Name
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecipeListScreen(
-    // CHANGED PARAMETERS to use the new ViewModels
     listViewModel: RecipeListViewModel,
     globalViewModel: GlobalRecipeOperationsViewModel,
     onRecipeClick: (String) -> Unit
@@ -37,6 +37,12 @@ fun RecipeListScreen(
     val isLoading by listViewModel.isLoading
     val errorMessage by listViewModel.errorMessage
     val categoriesState by listViewModel.categories
+    val areasState by listViewModel.areas
+
+    // NEW: Collect selected filter states
+    val selectedCategory by listViewModel.selectedCategory
+    val selectedArea by listViewModel.selectedArea
+    val selectedIngredient by listViewModel.selectedIngredient
 
     // Collect global favorites state from Global ViewModel
     val favoriteRecipesList by globalViewModel.favoriteRecipes.collectAsState()
@@ -52,7 +58,6 @@ fun RecipeListScreen(
             query = searchQuery,
             onQueryChange = { listViewModel.onSearchQueryChanged(it) },
             onSearch = {
-                // Pass the current favorite IDs to the search function
                 listViewModel.searchRecipes(favoriteIds)
                 active = false
             },
@@ -73,13 +78,43 @@ fun RecipeListScreen(
         }
         // --- End SearchBar ---
 
-        // --- Horizontal Filter Bar (New Feature) ---
-        CategoryFilterBar(categoriesState = categoriesState, onFilterSelected = { categoryName ->
-            // Pass the current favorite IDs to the filter function
-            listViewModel.filterAndDisplayRecipes("category", categoryName, favoriteIds)
-        })
+        Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
 
-        // --- Main Content Display ---
+            // --- 1. Horizontal Category Filter Bar ---
+            Text("Categories", style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(start = 16.dp, top = 8.dp))
+            CategoryFilterBar(
+                categoriesState = categoriesState,
+                selectedFilter = selectedCategory, // Pass selected state
+                favoriteIds = favoriteIds,
+                listViewModel = listViewModel
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // --- 2. Horizontal Area Filter Bar ---
+            Text("Areas", style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(start = 16.dp))
+            AreaFilterBar(
+                areasState = areasState,
+                selectedFilter = selectedArea, // Pass selected state
+                favoriteIds = favoriteIds,
+                listViewModel = listViewModel
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // --- 3. Horizontal Ingredient Filter Bar ---
+            Text("Common Ingredients", style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(start = 16.dp))
+            IngredientFilterBar(
+                selectedFilter = selectedIngredient, // Pass selected state
+                favoriteIds = favoriteIds,
+                listViewModel = listViewModel
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+
+
+        // --- Main Content Display (LazyColumn for Search Results) ---
         if (isLoading) {
             Box(
                 modifier = Modifier.fillMaxSize(),
@@ -101,13 +136,15 @@ fun RecipeListScreen(
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                items(recipes) { recipe ->
+                items(
+                    items = recipes,
+                    key = { it.id }
+                ) { recipe ->
                     val currentIsFavorite = favoriteIds.contains(recipe.id)
                     RecipeCard(
                         recipe = recipe.copy(isFavorite = currentIsFavorite),
                         onClick = { onRecipeClick(recipe.id) },
                         onFavoriteClick = { isFavorite ->
-                            // Use Global ViewModel for all favorite modification actions
                             if (isFavorite) {
                                 globalViewModel.removeFavorite(recipe.id)
                             } else {
@@ -121,11 +158,13 @@ fun RecipeListScreen(
     }
 }
 
-// CategoryFilterBar composable remains unchanged
+// --- 1. Category Filter Bar (FIXED & PERSISTENT) ---
 @Composable
 fun CategoryFilterBar(
     categoriesState: Result<List<Category>>,
-    onFilterSelected: (String) -> Unit
+    selectedFilter: String?,
+    favoriteIds: Set<String>,
+    listViewModel: RecipeListViewModel
 ) {
     when (categoriesState) {
         is Result.Loading -> {
@@ -142,22 +181,94 @@ fun CategoryFilterBar(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                categoriesState.data.take(10).forEach { category ->
-                    item(key = category.id) {
-                        FilterChip(
-                            selected = false,
-                            onClick = { onFilterSelected(category.name) },
-                            label = { Text(category.name) }
-                        )
-                    }
+                items(categoriesState.data.take(10), key = { it.id }) { category ->
+                    FilterChip(
+                        selected = selectedFilter == category.name, // PERSISTENCE FIX
+                        onClick = {
+                            listViewModel.filterAndDisplayRecipes("category", category.name, favoriteIds)
+                        },
+                        label = { Text(category.name) }
+                    )
                 }
             }
         }
         is Result.Error -> {
             Text(
-                "Could not load filters.",
+                "Could not load categories.",
                 style = MaterialTheme.typography.labelSmall,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+            )
+        }
+    }
+}
+
+
+// --- 2. Area Filter Bar (FIXED & PERSISTENT) ---
+@Composable
+fun AreaFilterBar(
+    areasState: Result<List<Name>>,
+    selectedFilter: String?,
+    favoriteIds: Set<String>,
+    listViewModel: RecipeListViewModel
+) {
+    when (areasState) {
+        is Result.Loading -> {
+            CircularProgressIndicator(
+                modifier = Modifier
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .size(24.dp),
+                strokeWidth = 2.dp
+            )
+        }
+        is Result.Success -> {
+            LazyRow(
+                contentPadding = PaddingValues(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                items(areasState.data.take(10), key = { it.name }) { area ->
+                    FilterChip(
+                        selected = selectedFilter == area.name, // PERSISTENCE FIX
+                        onClick = {
+                            listViewModel.filterAndDisplayRecipes("area", area.name, favoriteIds)
+                        },
+                        label = { Text(area.name) }
+                    )
+                }
+            }
+        }
+        is Result.Error -> {
+            Text(
+                "Could not load areas.",
+                style = MaterialTheme.typography.labelSmall,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+            )
+        }
+    }
+}
+
+// --- 3. Ingredient Filter Bar (FIXED & PERSISTENT) ---
+@Composable
+fun IngredientFilterBar(
+    selectedFilter: String?,
+    favoriteIds: Set<String>,
+    listViewModel: RecipeListViewModel
+) {
+    // Hardcoded common ingredients for a simple horizontal scroll
+    val commonIngredients = listOf("Chicken", "Beef", "Salmon", "Cheese", "Pasta")
+
+    LazyRow(
+        contentPadding = PaddingValues(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        items(commonIngredients) { ingredient ->
+            FilterChip(
+                selected = selectedFilter == ingredient, // PERSISTENCE FIX
+                onClick = {
+                    listViewModel.filterAndDisplayRecipes("ingredient", ingredient, favoriteIds)
+                },
+                label = { Text(ingredient) }
             )
         }
     }
