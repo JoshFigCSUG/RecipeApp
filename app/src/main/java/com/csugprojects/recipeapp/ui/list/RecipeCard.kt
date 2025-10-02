@@ -15,6 +15,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.csugprojects.recipeapp.domain.model.Recipe
+// ADDED IMPORT for FontFamily
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 
 @Composable
 fun RecipeCard(
@@ -54,15 +57,15 @@ fun RecipeCard(
                     )
                 }
             }
-            // REVERTED: Removed the inner Column wrapping the title and the Category/Area Text fields.
             Text(
                 text = recipe.title,
-                style = MaterialTheme.typography.titleLarge,
+                style = MaterialTheme.typography.titleLarge.copy(
+                    fontFamily = FontFamily.Cursive,
+                    fontWeight = FontWeight.Bold), // FIXED: Applied Cursive font family
                 modifier = Modifier.padding(16.dp),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
-            // The display of recipe.category and recipe.area is now completely omitted here.
         }
     }
 }
