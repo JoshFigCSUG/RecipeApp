@@ -80,7 +80,7 @@ fun HomeScreen(
                         recipe = recipe.copy(isFavorite = favoriteIds.contains(recipe.id)),
                         onClick = { onRecipeClick(recipe.id) },
                         onFavoriteClick = { isFavorite ->
-                            if (isFavorite) viewModel.removeFavorite(recipe.id) else viewModel.addFavorite(recipe)
+                            if (isFavorite) viewModel.addFavorite(recipe) else viewModel.removeFavorite(recipe.id)
                         }
                     )
                 }
@@ -107,7 +107,7 @@ fun HomeScreen(
                         recipe = recipe.copy(isFavorite = currentIsFavorite), // Inject live status
                         onClick = { onRecipeClick(recipe.id) },
                         onFavoriteClick = { isFavorite ->
-                            if (isFavorite) viewModel.removeFavorite(recipe.id) else viewModel.addFavorite(recipe)
+                            if (isFavorite) viewModel.addFavorite(recipe) else viewModel.removeFavorite(recipe.id)
                         }
                     )
                 } ?: Text("No random recipe found. Try searching!")

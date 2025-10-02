@@ -149,9 +149,9 @@ fun RecipeListScreen(
                         onClick = { onRecipeClick(recipe.id) },
                         onFavoriteClick = { isFavorite ->
                             if (isFavorite) {
-                                globalViewModel.removeFavorite(recipe.id)
-                            } else {
                                 globalViewModel.addFavorite(recipe)
+                            } else {
+                                globalViewModel.removeFavorite(recipe.id)
                             }
                         }
                     )

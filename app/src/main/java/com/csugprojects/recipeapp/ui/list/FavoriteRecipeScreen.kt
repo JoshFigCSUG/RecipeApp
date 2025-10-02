@@ -59,11 +59,11 @@ fun FavoriteRecipeScreen(
                         recipe = recipe.copy(isFavorite = true),
                         onClick = { onRecipeClick(recipe.id) },
                         onFavoriteClick = { isFavorite ->
-                            // Functional fix: Logic remains the same, but the ViewModel is now GlobalRecipeOperationsViewModel
+                            // FIX: The logic was inverted. If 'isFavorite' is true, ADD it; otherwise, REMOVE it.
                             if (isFavorite) {
-                                viewModel.removeFavorite(recipe.id)
-                            } else {
                                 viewModel.addFavorite(recipe)
+                            } else {
+                                viewModel.removeFavorite(recipe.id)
                             }
                         }
                     )
