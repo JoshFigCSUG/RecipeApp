@@ -1,4 +1,4 @@
-package com.csugprojects.recipeapp.ui
+package com.csugprojects.recipeapp.ui.viewmodel
 
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
@@ -11,7 +11,6 @@ import com.csugprojects.recipeapp.domain.repository.RecipeRepository
 import com.csugprojects.recipeapp.util.Result
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 
 class RecipeViewModel(private val repository: RecipeRepository) : ViewModel() {
@@ -31,8 +30,11 @@ class RecipeViewModel(private val repository: RecipeRepository) : ViewModel() {
     private val _favoriteRecipes = MutableStateFlow<List<Recipe>>(emptyList())
     val favoriteRecipes: StateFlow<List<Recipe>> = _favoriteRecipes
 
-    // --- New States for Filter/List Capabilities ---
-    // These states hold the lists of available categories and areas for filtering UI
+    // --- NEW: Recently Viewed State ---
+    private val _recentlyViewed = MutableStateFlow<List<Recipe>>(emptyList())
+    val recentlyViewed: StateFlow<List<Recipe>> = _recentlyViewed
+
+    // --- Existing States for Filter/List Capabilities ---
     private val _categories = mutableStateOf<Result<List<Category>>>(Result.Loading)
     val categories: State<Result<List<Category>>> = _categories
 
@@ -97,8 +99,24 @@ class RecipeViewModel(private val repository: RecipeRepository) : ViewModel() {
             onResult(Result.Loading)
             val result = repository.getRecipeDetails(recipeId)
             onResult(result)
+
+            // NEW LOGIC: Add to recently viewed list after successful fetch
+            if (result is Result.Success) {
+                addRecentlyViewedRecipe(result.data)
+            }
         }
     }
+
+    // --- NEW: Recently Viewed Helper Function ---
+    fun addRecentlyViewedRecipe(recipe: Recipe) {
+        viewModelScope.launch {
+            // Remove the recipe if it already exists, then add it to the front.
+            val updatedList = listOf(recipe) + _recentlyViewed.value.filter { it.id != recipe.id }
+            // Limit the list to the 5 most recent recipes
+            _recentlyViewed.value = updatedList.take(5)
+        }
+    }
+    // ---------------------------------------------
 
     // --- New Filter/List Functions ---
 
@@ -148,7 +166,7 @@ class RecipeViewModel(private val repository: RecipeRepository) : ViewModel() {
         }
     }
 
-    fun fetchRandomRecipe(onResult: (Result<com.csugprojects.recipeapp.domain.model.Recipe>) -> Unit) {
+    fun fetchRandomRecipe(onResult: (Result<Recipe>) -> Unit) {
         viewModelScope.launch {
             onResult(Result.Loading)
             val result = repository.getRandomRecipe()

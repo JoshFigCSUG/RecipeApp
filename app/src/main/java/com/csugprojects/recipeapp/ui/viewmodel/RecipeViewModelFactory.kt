@@ -1,4 +1,4 @@
-package com.csugprojects.recipeapp.ui
+package com.csugprojects.recipeapp.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider

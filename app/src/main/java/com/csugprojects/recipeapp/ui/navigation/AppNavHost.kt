@@ -11,8 +11,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.NavHostController // ADDED: Import NavHostController
 import androidx.navigation.navArgument
 import com.csugprojects.recipeapp.AppContainer
-import com.csugprojects.recipeapp.ui.RecipeViewModel
-import com.csugprojects.recipeapp.ui.RecipeViewModelFactory
+import com.csugprojects.recipeapp.ui.viewmodel.RecipeViewModel
+import com.csugprojects.recipeapp.ui.viewmodel.RecipeViewModelFactory
 import com.csugprojects.recipeapp.ui.detail.RecipeDetailScreen
 import com.csugprojects.recipeapp.ui.list.FavoriteRecipeScreen
 import com.csugprojects.recipeapp.ui.list.HomeScreen

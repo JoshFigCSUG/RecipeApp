@@ -25,7 +25,7 @@ import com.csugprojects.recipeapp.domain.model.Ingredient
 import com.csugprojects.recipeapp.domain.model.Name
 import com.csugprojects.recipeapp.domain.model.Recipe
 import com.csugprojects.recipeapp.domain.repository.RecipeRepository
-import com.csugprojects.recipeapp.ui.RecipeViewModel
+import com.csugprojects.recipeapp.ui.viewmodel.RecipeViewModel
 import com.csugprojects.recipeapp.util.Result
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
