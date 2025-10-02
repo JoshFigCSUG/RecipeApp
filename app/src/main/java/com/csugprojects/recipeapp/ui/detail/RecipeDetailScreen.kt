@@ -7,7 +7,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.* // Correct import for collectAsState()
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -18,36 +18,47 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
-// NEW IMPORT:
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import com.csugprojects.recipeapp.domain.model.Category
 import com.csugprojects.recipeapp.domain.model.Ingredient
 import com.csugprojects.recipeapp.domain.model.Name
 import com.csugprojects.recipeapp.domain.model.Recipe
 import com.csugprojects.recipeapp.domain.repository.RecipeRepository
-import com.csugprojects.recipeapp.ui.viewmodel.RecipeViewModel
+import com.csugprojects.recipeapp.ui.viewmodel.GlobalRecipeOperationsViewModel
+import com.csugprojects.recipeapp.ui.viewmodel.RecipeDetailViewModel
+import com.csugprojects.recipeapp.ui.viewmodel.RecipeViewModelFactory
 import com.csugprojects.recipeapp.util.Result
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import androidx.compose.runtime.collectAsState // Explicit, correct import
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecipeDetailScreen(
     recipeId: String,
-    viewModel: RecipeViewModel,
-    onBackClick: () -> Unit // NEW PARAMETER: Action to pop the back stack
+    detailViewModel: RecipeDetailViewModel, // ViewModel for fetching recipe details
+    globalViewModel: GlobalRecipeOperationsViewModel, // ViewModel for favorites and recently viewed
+    onBackClick: () -> Unit
 ) {
-    val favoriteRecipes by viewModel.favoriteRecipes.collectAsState()
+    // OBSERVE STATES FROM SEPARATE VIEWMODELS
+    val favoriteRecipes by globalViewModel.favoriteRecipes.collectAsState()
+    val recipeState by detailViewModel.recipeState.collectAsState() // Observe StateFlow directly
 
-    var recipeState by remember { mutableStateOf<Result<Recipe>>(Result.Loading) }
-
+    // Calculate favorite status based on global state
     val isFavorite = remember(favoriteRecipes) {
         favoriteRecipes.any { it.id == recipeId }
     }
 
+    // --- Data Fetching and Side Effects ---
     LaunchedEffect(recipeId) {
-        viewModel.getRecipeDetails(recipeId) { result ->
-            recipeState = result
+        detailViewModel.getRecipeDetails(recipeId)
+    }
+
+    // Log recipe to "Recently Viewed" upon successful fetch
+    LaunchedEffect(recipeState) {
+        if (recipeState is Result.Success) {
+            val recipe = (recipeState as Result.Success<Recipe>).data
+            globalViewModel.addRecentlyViewedRecipe(recipe)
         }
     }
 
@@ -56,7 +67,7 @@ fun RecipeDetailScreen(
             TopAppBar(
                 title = { Text(text = "Recipe Details") },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) { // Implements the dynamic back action
+                    IconButton(onClick = onBackClick) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Go back")
                     }
                 }
@@ -76,9 +87,11 @@ fun RecipeDetailScreen(
                         isFavorite = isFavorite,
                         onFavoriteClick = {
                             if (isFavorite) {
-                                viewModel.removeFavorite(recipe.id)
+                                // Calls globalViewModel for shared action
+                                globalViewModel.removeFavorite(recipe.id)
                             } else {
-                                viewModel.addFavorite(recipe)
+                                // Calls globalViewModel for shared action
+                                globalViewModel.addFavorite(recipe)
                             }
                         },
                         modifier = Modifier.fillMaxSize()
@@ -96,9 +109,7 @@ fun RecipeDetailScreen(
     }
 }
 
-// --- RecipeDetailContent and MockRepository implementations omitted for brevity ---
-
-// Update the Preview function to include the dummy onBackClick lambda:
+// --- Mock Repository for Preview ---
 private class MockRecipeRepository : RecipeRepository {
     private val mockRecipe = Recipe(
         id = "52772",
@@ -206,17 +217,26 @@ fun RecipeDetailContent(
 @Preview
 @Composable
 fun RecipeDetailScreenPreview() {
+    val mockRepo = MockRecipeRepository()
+    val factory = object : androidx.lifecycle.ViewModelProvider.Factory {
+        override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+            // Updated to instantiate the new ViewModels
+            if (modelClass.isAssignableFrom(GlobalRecipeOperationsViewModel::class.java)) {
+                @Suppress("UNCHECKED_CAST")
+                return GlobalRecipeOperationsViewModel(mockRepo) as T
+            }
+            if (modelClass.isAssignableFrom(RecipeDetailViewModel::class.java)) {
+                @Suppress("UNCHECKED_CAST")
+                return RecipeDetailViewModel(mockRepo) as T
+            }
+            throw IllegalArgumentException("Unknown ViewModel class")
+        }
+    }
+
     RecipeDetailScreen(
         recipeId = "52772",
-        viewModel = viewModel(factory = object : androidx.lifecycle.ViewModelProvider.Factory {
-            override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
-                if (modelClass.isAssignableFrom(RecipeViewModel::class.java)) {
-                    @Suppress("UNCHECKED_CAST")
-                    return RecipeViewModel(MockRecipeRepository()) as T
-                }
-                throw IllegalArgumentException("Unknown ViewModel class")
-            }
-        }),
-        onBackClick = {} // Added lambda for preview
+        detailViewModel = viewModel(factory = factory),
+        globalViewModel = viewModel(factory = factory),
+        onBackClick = {}
     )
 }

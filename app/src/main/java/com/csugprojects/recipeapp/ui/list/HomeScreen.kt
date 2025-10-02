@@ -18,13 +18,19 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import com.csugprojects.recipeapp.ui.viewmodel.RecipeViewModel
 import com.csugprojects.recipeapp.util.Result
+// UPDATED IMPORTS
+import androidx.compose.runtime.collectAsState // Corrected Flow Import
+import com.csugprojects.recipeapp.ui.viewmodel.GlobalRecipeOperationsViewModel // New ViewModel
+// ADDED IMPORT for RecipeCard (defined in RecipeCard.kt in this package)
+import com.csugprojects.recipeapp.ui.list.RecipeCard
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    viewModel: RecipeViewModel,
+    // CHANGED PARAMETER: Use the GlobalRecipeOperationsViewModel
+    viewModel: GlobalRecipeOperationsViewModel,
     onRecipeClick: (String) -> Unit,
     onSearchClick: () -> Unit
 ) {
@@ -73,6 +79,7 @@ fun HomeScreen(
                         recipe = recipe.copy(isFavorite = favoriteIds.contains(recipe.id)),
                         onClick = { onRecipeClick(recipe.id) },
                         onFavoriteClick = { isFavorite ->
+                            // Use Global ViewModel for favorite operations
                             if (isFavorite) viewModel.removeFavorite(recipe.id) else viewModel.addFavorite(recipe)
                         }
                     )
@@ -95,10 +102,13 @@ fun HomeScreen(
             }
             is Result.Success -> {
                 state.data?.let { recipe ->
+                    // Ensure the RecipeCard is marked favorite if it is
+                    val currentIsFavorite = favoriteIds.contains(recipe.id)
                     RecipeCard(
-                        recipe = recipe,
+                        recipe = recipe.copy(isFavorite = currentIsFavorite),
                         onClick = { onRecipeClick(recipe.id) },
                         onFavoriteClick = { isFavorite ->
+                            // Use Global ViewModel for favorite operations
                             if (isFavorite) viewModel.removeFavorite(recipe.id) else viewModel.addFavorite(recipe)
                         }
                     )

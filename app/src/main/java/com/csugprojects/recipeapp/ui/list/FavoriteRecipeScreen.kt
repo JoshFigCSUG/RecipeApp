@@ -10,12 +10,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.csugprojects.recipeapp.ui.viewmodel.RecipeViewModel
+// UPDATED IMPORT: Use the new Global ViewModel
+import com.csugprojects.recipeapp.ui.viewmodel.GlobalRecipeOperationsViewModel
+// ADDED IMPORT: Needed for the RecipeCard composable
+import com.csugprojects.recipeapp.ui.list.RecipeCard
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FavoriteRecipeScreen(
-    viewModel: RecipeViewModel,
+    // CHANGED PARAMETER: Use the GlobalRecipeOperationsViewModel
+    viewModel: GlobalRecipeOperationsViewModel,
     onRecipeClick: (String) -> Unit
     // Removed: onBackClick: () -> Unit
 ) {
@@ -54,7 +59,7 @@ fun FavoriteRecipeScreen(
                         recipe = recipe.copy(isFavorite = true),
                         onClick = { onRecipeClick(recipe.id) },
                         onFavoriteClick = { isFavorite ->
-                            // Functional fix: Logic remains the same, but the UI should update via the flow
+                            // Functional fix: Logic remains the same, but the ViewModel is now GlobalRecipeOperationsViewModel
                             if (isFavorite) {
                                 viewModel.removeFavorite(recipe.id)
                             } else {

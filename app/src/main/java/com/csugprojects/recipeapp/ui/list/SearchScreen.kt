@@ -13,26 +13,33 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.csugprojects.recipeapp.domain.model.Category
-import com.csugprojects.recipeapp.ui.viewmodel.RecipeViewModel
 import com.csugprojects.recipeapp.util.Result
 import kotlin.text.isLetter
+// CORRECTED IMPORTS
+import androidx.compose.runtime.collectAsState
+import com.csugprojects.recipeapp.ui.viewmodel.GlobalRecipeOperationsViewModel
+import com.csugprojects.recipeapp.ui.viewmodel.RecipeListViewModel
+// ADDED IMPORT for RecipeCard
+import com.csugprojects.recipeapp.ui.list.RecipeCard
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecipeListScreen(
-    viewModel: RecipeViewModel,
+    // CHANGED PARAMETERS to use the new ViewModels
+    listViewModel: RecipeListViewModel,
+    globalViewModel: GlobalRecipeOperationsViewModel,
     onRecipeClick: (String) -> Unit
-    // Removed: onFavoritesClick: () -> Unit
 ) {
-    val recipes by viewModel.recipes
-    val searchQuery by viewModel.searchQuery
-    val isLoading by viewModel.isLoading
-    val errorMessage by viewModel.errorMessage
-    val categoriesState by viewModel.categories
+    // Collect list states from List ViewModel
+    val recipes by listViewModel.recipes
+    val searchQuery by listViewModel.searchQuery
+    val isLoading by listViewModel.isLoading
+    val errorMessage by listViewModel.errorMessage
+    val categoriesState by listViewModel.categories
 
-    // Functional Fix: Collect the live state of favorites for immediate UI updates
-    val favoriteRecipesList by viewModel.favoriteRecipes.collectAsState()
+    // Collect global favorites state from Global ViewModel
+    val favoriteRecipesList by globalViewModel.favoriteRecipes.collectAsState()
     val favoriteIds = remember(favoriteRecipesList) {
         favoriteRecipesList.map { it.id }.toSet()
     }
@@ -43,10 +50,10 @@ fun RecipeListScreen(
         // --- Material 3 SearchBar Implementation ---
         SearchBar(
             query = searchQuery,
-            onQueryChange = { viewModel.onSearchQueryChanged(it) },
+            onQueryChange = { listViewModel.onSearchQueryChanged(it) },
             onSearch = {
-                val searchType = if (it.length == 1 && it.first().isLetter()) "firstLetter" else "name"
-                viewModel.searchRecipes()
+                // Pass the current favorite IDs to the search function
+                listViewModel.searchRecipes(favoriteIds)
                 active = false
             },
             active = active,
@@ -55,7 +62,6 @@ fun RecipeListScreen(
             leadingIcon = {
                 Icon(Icons.Default.Search, contentDescription = null)
             },
-            // Removed: trailingIcon for Favorites, as it is now in the Bottom Bar
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 8.dp)
@@ -69,7 +75,8 @@ fun RecipeListScreen(
 
         // --- Horizontal Filter Bar (New Feature) ---
         CategoryFilterBar(categoriesState = categoriesState, onFilterSelected = { categoryName ->
-            viewModel.filterAndDisplayRecipes("category", categoryName)
+            // Pass the current favorite IDs to the filter function
+            listViewModel.filterAndDisplayRecipes("category", categoryName, favoriteIds)
         })
 
         // --- Main Content Display ---
@@ -100,10 +107,11 @@ fun RecipeListScreen(
                         recipe = recipe.copy(isFavorite = currentIsFavorite),
                         onClick = { onRecipeClick(recipe.id) },
                         onFavoriteClick = { isFavorite ->
+                            // Use Global ViewModel for all favorite modification actions
                             if (isFavorite) {
-                                viewModel.removeFavorite(recipe.id)
+                                globalViewModel.removeFavorite(recipe.id)
                             } else {
-                                viewModel.addFavorite(recipe)
+                                globalViewModel.addFavorite(recipe)
                             }
                         }
                     )
@@ -112,6 +120,7 @@ fun RecipeListScreen(
         }
     }
 }
+
 // CategoryFilterBar composable remains unchanged
 @Composable
 fun CategoryFilterBar(
