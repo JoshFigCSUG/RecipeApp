@@ -31,21 +31,26 @@ fun AppBottomNav(navController: NavHostController) {
                 label = { Text(screen.label) },
                 selected = isSelected,
                 onClick = {
+                    val isHome = screen.route == Screen.Home.route // Determine if target is Home
+
                     // Navigate to the target screen (Home, Search, or Favorites)
                     navController.navigate(screen.route) {
                         // FIX 1: Pop up to the very first destination of the NavHost's graph.
                         // This clears any intermediate Detail screens that were pushed.
                         popUpTo(navController.graph.findStartDestination().id) {
+                            // Setting inclusive = false ensures the 'Home' screen is preserved on the stack.
+                            inclusive = false
                             // Save state for the other main tabs (Favorites, Search)
-                            saveState = true
+                            saveState = !isHome // Only save state for Search/Favorites
                         }
 
-                        // FIX 2: Prevents a new instance of the screen from being placed on top of the stack.
-                        launchSingleTop = true
+                        // FIX 2 (CRITICAL RESET FIX):
+                        // launchSingleTop = false for Home allows navigation to occur even if already on the screen,
+                        // forcing a re-composition/reset. For others, it keeps the single-top behavior.
+                        launchSingleTop = !isHome
 
-                        // FIX 3 (CRITICAL): Restore the state of the screen (e.g., scroll position, but NOT the deep-linked screen)
-                        // This is necessary to bring back the RecipeListScreen after the Detail Screen has been popped.
-                        restoreState = true
+                        // FIX 3: Only restore state for Search/Favorites.
+                        restoreState = !isHome
                     }
                 }
             )

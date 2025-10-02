@@ -8,7 +8,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
+import androidx.navigation.NavHostController // ADDED: Import NavHostController
 import androidx.navigation.navArgument
 import com.csugprojects.recipeapp.AppContainer
 import com.csugprojects.recipeapp.ui.RecipeViewModel
@@ -19,14 +19,18 @@ import com.csugprojects.recipeapp.ui.list.HomeScreen
 import com.csugprojects.recipeapp.ui.list.RecipeListScreen // Using this for the SearchScreen logic
 
 @Composable
-fun AppNavHost(appContainer: AppContainer, paddingValues: PaddingValues) {
-    val navController = rememberNavController()
+fun AppNavHost(
+    navController: NavHostController, // ADDED: Accept the shared NavController
+    appContainer: AppContainer,
+    paddingValues: PaddingValues
+) {
+    // REMOVED: val navController = rememberNavController()
     val viewModel: RecipeViewModel = viewModel(
         factory = RecipeViewModelFactory(appContainer.recipeRepository)
     )
 
     NavHost(
-        navController = navController,
+        navController = navController, // USED: The shared NavController
         startDestination = Screen.Home.route,
         modifier = Modifier.padding(paddingValues)
     ) {

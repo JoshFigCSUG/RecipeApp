@@ -37,13 +37,19 @@ class MainActivity : ComponentActivity() {
 // New top-level composable to encapsulate the Scaffold and navigation logic
 @Composable
 fun RootScreen(appContainer: AppContainer) {
+    // Create the single NavController instance here
     val navController = rememberNavController()
 
     Scaffold(
         bottomBar = { AppBottomNav(navController = navController) }
     ) { paddingValues ->
         // AppNavHost receives the padding from Scaffold
-        AppNavHost(appContainer = appContainer, paddingValues = paddingValues)
+        // FIX: Pass the shared navController to the NavHost
+        AppNavHost(
+            navController = navController,
+            appContainer = appContainer,
+            paddingValues = paddingValues
+        )
     }
 }
 
