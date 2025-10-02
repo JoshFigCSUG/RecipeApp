@@ -54,33 +54,15 @@ fun RecipeCard(
                     )
                 }
             }
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text(
-                    text = recipe.title,
-                    style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.padding(bottom = 4.dp),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-
-                // NEW: Display Category
-                recipe.category?.let { category ->
-                    Text(
-                        text = "Category: $category",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.secondary
-                    )
-                }
-
-                // NEW: Display Area (Cuisine)
-                recipe.area?.let { area ->
-                    Text(
-                        text = "Cuisine: $area",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.secondary
-                    )
-                }
-            }
+            // REVERTED: Removed the inner Column wrapping the title and the Category/Area Text fields.
+            Text(
+                text = recipe.title,
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(16.dp),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            // The display of recipe.category and recipe.area is now completely omitted here.
         }
     }
 }
