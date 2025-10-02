@@ -14,8 +14,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.csugprojects.recipeapp.AppContainer
 import com.csugprojects.recipeapp.MyApp
-import com.csugprojects.recipeapp.ui.RecipeViewModelFactory
 import com.csugprojects.recipeapp.ui.detail.RecipeDetailScreen
+import com.csugprojects.recipeapp.ui.list.FavoriteRecipeScreen // NEW IMPORT
 import com.csugprojects.recipeapp.ui.list.RecipeListScreen
 import com.csugprojects.recipeapp.ui.theme.RecipeAppTheme
 
@@ -50,6 +50,9 @@ fun RecipeAppNavGraph(appContainer: AppContainer) {
                 viewModel = viewModel,
                 onRecipeClick = { recipeId ->
                     navController.navigate("recipeDetail/$recipeId")
+                },
+                onFavoritesClick = { // NEW PARAMETER
+                    navController.navigate("favorites")
                 }
             )
         }
@@ -61,6 +64,17 @@ fun RecipeAppNavGraph(appContainer: AppContainer) {
                     viewModel = viewModel
                 )
             }
+        }
+        composable("favorites") { // NEW ROUTE
+            FavoriteRecipeScreen(
+                viewModel = viewModel,
+                onRecipeClick = { recipeId ->
+                    navController.navigate("recipeDetail/$recipeId")
+                },
+                onBackClick = {
+                    navController.popBackStack()
+                }
+            )
         }
     }
 }
