@@ -17,8 +17,8 @@ fun AppBottomNav(navController: NavHostController) {
 
         navItems.forEach { screen ->
             val isSelected = currentRoute == screen.route ||
-                    // This handles selection when the Detail screen is active
-                    (currentRoute?.startsWith("recipeDetail") == true && navController.previousBackStackEntry?.destination?.route == screen.route)
+                    // Highlight the correct tab even when on the Detail screen
+                    (currentRoute?.startsWith(Screen.Detail.route.substringBefore("/{")) == true && navController.previousBackStackEntry?.destination?.route == screen.route)
 
             NavigationBarItem(
                 icon = { Icon(screen.icon, contentDescription = screen.label) },
@@ -26,13 +26,15 @@ fun AppBottomNav(navController: NavHostController) {
                 selected = isSelected,
                 onClick = {
                     navController.navigate(screen.route) {
-                        // FIX: Clears the back stack up to the initial screen
+                        // FIX: Pop up to the start destination of the graph, clearing any intermediate Detail Screens.
+                        // We use inclusive=false (by default) to ensure the Home screen remains on the stack.
                         popUpTo(navController.graph.findStartDestination().id) {
                             saveState = true
                         }
-                        // Avoid multiple copies when reselecting
+
+                        // Prevents adding a duplicate instance to the back stack
                         launchSingleTop = true
-                        // Restore state when reselecting
+                        // Restores state of the screen (e.g., scroll position)
                         restoreState = true
                     }
                 }

@@ -148,7 +148,7 @@ class RecipeViewModel(private val repository: RecipeRepository) : ViewModel() {
         }
     }
 
-    fun fetchRandomRecipe(onResult: (Result<Recipe>) -> Unit) {
+    fun fetchRandomRecipe(onResult: (Result<com.csugprojects.recipeapp.domain.model.Recipe>) -> Unit) {
         viewModelScope.launch {
             onResult(Result.Loading)
             val result = repository.getRandomRecipe()
