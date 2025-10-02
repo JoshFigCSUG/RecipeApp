@@ -18,6 +18,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+// NEW IMPORT:
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import com.csugprojects.recipeapp.domain.model.Category
 import com.csugprojects.recipeapp.domain.model.Ingredient
 import com.csugprojects.recipeapp.domain.model.Name
@@ -32,14 +34,13 @@ import kotlinx.coroutines.flow.flow
 @Composable
 fun RecipeDetailScreen(
     recipeId: String,
-    viewModel: RecipeViewModel
+    viewModel: RecipeViewModel,
+    onBackClick: () -> Unit // NEW PARAMETER: Action to pop the back stack
 ) {
-    // Collect the live state of favorites from the ViewModel
     val favoriteRecipes by viewModel.favoriteRecipes.collectAsState()
 
     var recipeState by remember { mutableStateOf<Result<Recipe>>(Result.Loading) }
 
-    // isFavorite status is derived from the live collected list
     val isFavorite = remember(favoriteRecipes) {
         favoriteRecipes.any { it.id == recipeId }
     }
@@ -50,10 +51,16 @@ fun RecipeDetailScreen(
         }
     }
 
-    // --- UI Fix: Using Scaffold for correct system bar spacing ---
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("Recipe Details") })
+            TopAppBar(
+                title = { Text(text = "Recipe Details") },
+                navigationIcon = {
+                    IconButton(onClick = onBackClick) { // Implements the dynamic back action
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Go back")
+                    }
+                }
+            )
         },
         modifier = Modifier.fillMaxSize()
     ) { paddingValues ->
@@ -63,9 +70,7 @@ fun RecipeDetailScreen(
                     CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                 }
                 is Result.Success -> {
-                    // Functional Fix: Use the guaranteed non-null Recipe object directly
                     val recipe = state.data
-
                     RecipeDetailContent(
                         recipe = recipe,
                         isFavorite = isFavorite,
@@ -76,7 +81,7 @@ fun RecipeDetailScreen(
                                 viewModel.addFavorite(recipe)
                             }
                         },
-                        modifier = Modifier.fillMaxSize() // Fill the padded space
+                        modifier = Modifier.fillMaxSize()
                     )
                 }
                 is Result.Error -> {
@@ -89,6 +94,37 @@ fun RecipeDetailScreen(
             }
         }
     }
+}
+
+// --- RecipeDetailContent and MockRepository implementations omitted for brevity ---
+
+// Update the Preview function to include the dummy onBackClick lambda:
+private class MockRecipeRepository : RecipeRepository {
+    private val mockRecipe = Recipe(
+        id = "52772",
+        title = "Chicken Teriyaki",
+        imageUrl = "https://www.themealdb.com/images/media/meals/g046bb1663960946.jpg",
+        instructions = "This is a placeholder recipe for the preview. It includes all the visual elements but no real networking functionality. The main app uses the real repository.",
+        ingredients = listOf(
+            Ingredient("Chicken", "1 lb"),
+            Ingredient("Soy Sauce", "1/4 cup"),
+            Ingredient("Sugar", "2 tbsp")
+        ),
+        isFavorite = false
+    )
+
+    override suspend fun searchRecipes(query: String): Result<List<Recipe>> = Result.Success(listOf(mockRecipe))
+    override suspend fun getRecipeDetails(id: String): Result<Recipe> = Result.Success(mockRecipe)
+    override fun getFavoriteRecipes(): Flow<List<Recipe>> = flow { emit(emptyList()) }
+    override suspend fun addFavorite(recipe: Recipe) {}
+    override suspend fun removeFavorite(recipeId: String) {}
+    override suspend fun getRandomRecipe(): Result<Recipe> = Result.Success(mockRecipe)
+    override suspend fun getCategories(): Result<List<Category>> = Result.Success(emptyList())
+    override suspend fun listIngredients(): Result<List<Name>> = Result.Success(emptyList())
+    override suspend fun listAreas(): Result<List<Name>> = Result.Success(emptyList())
+    override suspend fun filterByCategory(category: String): Result<List<Recipe>> = Result.Success(emptyList())
+    override suspend fun filterByArea(area: String): Result<List<Recipe>> = Result.Success(emptyList())
+    override suspend fun filterByIngredient(ingredient: String): Result<List<Recipe>> = Result.Success(emptyList())
 }
 
 @Composable
@@ -167,36 +203,6 @@ fun RecipeDetailContent(
     }
 }
 
-// --- Mock Repository Implementation (for Preview) ---
-private class MockRecipeRepository : RecipeRepository {
-    // ... (Mock implementation is correct and remains the same)
-    private val mockRecipe = Recipe(
-        id = "52772",
-        title = "Chicken Teriyaki",
-        imageUrl = "https://www.themealdb.com/images/media/meals/g046bb1663960946.jpg",
-        instructions = "This is a placeholder recipe for the preview. It includes all the visual elements but no real networking functionality. The main app uses the real repository.",
-        ingredients = listOf(
-            Ingredient("Chicken", "1 lb"),
-            Ingredient("Soy Sauce", "1/4 cup"),
-            Ingredient("Sugar", "2 tbsp")
-        ),
-        isFavorite = false
-    )
-
-    override suspend fun searchRecipes(query: String): Result<List<Recipe>> = Result.Success(listOf(mockRecipe))
-    override suspend fun getRecipeDetails(id: String): Result<Recipe> = Result.Success(mockRecipe)
-    override fun getFavoriteRecipes(): Flow<List<Recipe>> = flow { emit(emptyList()) }
-    override suspend fun addFavorite(recipe: Recipe) {}
-    override suspend fun removeFavorite(recipeId: String) {}
-    override suspend fun getRandomRecipe(): Result<Recipe> = Result.Success(mockRecipe)
-    override suspend fun getCategories(): Result<List<Category>> = Result.Success(emptyList())
-    override suspend fun listIngredients(): Result<List<Name>> = Result.Success(emptyList())
-    override suspend fun listAreas(): Result<List<Name>> = Result.Success(emptyList())
-    override suspend fun filterByCategory(category: String): Result<List<Recipe>> = Result.Success(emptyList())
-    override suspend fun filterByArea(area: String): Result<List<Recipe>> = Result.Success(emptyList())
-    override suspend fun filterByIngredient(ingredient: String): Result<List<Recipe>> = Result.Success(emptyList())
-}
-
 @Preview
 @Composable
 fun RecipeDetailScreenPreview() {
@@ -210,6 +216,7 @@ fun RecipeDetailScreenPreview() {
                 }
                 throw IllegalArgumentException("Unknown ViewModel class")
             }
-        })
+        }),
+        onBackClick = {} // Added lambda for preview
     )
 }

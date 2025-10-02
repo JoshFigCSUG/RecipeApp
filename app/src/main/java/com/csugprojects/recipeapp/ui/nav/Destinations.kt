@@ -6,10 +6,36 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.ui.graphics.vector.ImageVector
 
-// Define all top-level destinations and the detail route
+// The file location shown in the error is 'ui/nav', but I will use the established 'ui/navigation' package
+// based on previous context. If the file is in 'ui/nav', you must change the package line below.
+
+// FIX: Ensure all primary constructor parameters have explicit types (String, String, ImageVector)
 sealed class Screen(val route: String, val label: String, val icon: ImageVector) {
-    object Home : Screen("home", "Home", Icons.Default.Home) // Changed route from recipeList to home
-    object Favorites : Screen("favorites", "Favorites", Icons.Default.Favorite)
-    object Search : Screen("search", "Search Results", Icons.Default.Search) // New dedicated search route
-    object Detail : Screen("recipeDetail/{recipeId}", "Details", Icons.Default.Favorite)
+
+    // Primary Bottom Bar Destinations
+    // FIX: Icons.Default.Home/Search/Favorite are correctly passed as ImageVector types.
+    object Home : Screen(
+        route = "home",
+        label = "Home",
+        icon = Icons.Default.Home
+    )
+
+    object Search : Screen(
+        route = "search",
+        label = "Search",
+        icon = Icons.Default.Search
+    )
+
+    object Favorites : Screen(
+        route = "favorites",
+        label = "Favorites",
+        icon = Icons.Default.Favorite
+    )
+
+    // Child/Deep Link Destination
+    object Detail : Screen(
+        route = "recipeDetail/{recipeId}",
+        label = "Details",
+        icon = Icons.Default.Favorite // Placeholder icon, but correctly typed
+    )
 }
