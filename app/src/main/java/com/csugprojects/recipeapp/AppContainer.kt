@@ -2,6 +2,8 @@ package com.csugprojects.recipeapp
 
 import android.content.Context
 import androidx.room.Room
+import androidx.security.crypto.EncryptedSharedPreferences
+import androidx.security.crypto.MasterKeys
 import com.csugprojects.recipeapp.data.api.RecipeApiService
 import com.csugprojects.recipeapp.data.local.RecipeDatabase
 import com.csugprojects.recipeapp.data.repository.RecipeRepositoryImpl
@@ -28,6 +30,22 @@ class AppContainer(context: Context) {
             "recipe-database"
         ).build()
     }
+
+    // --- MILESTONE 6: SECURITY IMPLEMENTATION ---
+    // 1. Define Master Key Alias
+    private val masterKeyAlias = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
+
+    // 2. Initialize EncryptedSharedPreferences for securing preferences/tokens
+    val securePreferences by lazy {
+        EncryptedSharedPreferences.create(
+            "secure_app_prefs", // The name of the file to store your encrypted preferences
+            masterKeyAlias,
+            context.applicationContext,
+            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+        )
+    }
+    // ---------------------------------------------
 
     val recipeRepository: RecipeRepository by lazy {
         RecipeRepositoryImpl(

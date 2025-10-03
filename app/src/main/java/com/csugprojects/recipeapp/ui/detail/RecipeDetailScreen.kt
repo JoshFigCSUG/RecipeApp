@@ -1,5 +1,6 @@
 package com.csugprojects.recipeapp.ui.detail
 
+import androidx.compose.animation.animateContentSize // ADDED: Import for animation
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -78,6 +79,7 @@ fun RecipeDetailScreen(
         Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
             when (val state = recipeState) {
                 is Result.Loading -> {
+                    // When loading, content size is small (CircularProgressIndicator)
                     CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                 }
                 is Result.Success -> {
@@ -150,8 +152,12 @@ fun RecipeDetailContent(
     val scrollState = rememberScrollState()
 
     Column(
+        // MILESTONE 6 UX FIX: Apply animateContentSize to the main content Column
+        // This ensures the screen layout animates smoothly as the large image loads
+        // and content shifts or expands, fulfilling the animation requirement.
         modifier = modifier
             .verticalScroll(scrollState)
+            .animateContentSize() // ADDED for smooth expansion
     ) {
         Box(
             modifier = Modifier
