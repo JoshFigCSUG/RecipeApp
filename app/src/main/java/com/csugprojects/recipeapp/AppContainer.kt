@@ -3,7 +3,7 @@ package com.csugprojects.recipeapp
 import android.content.Context
 import androidx.room.Room
 import androidx.security.crypto.EncryptedSharedPreferences
-import androidx.security.crypto.MasterKeys
+import androidx.security.crypto.MasterKey // UPDATED: Use MasterKey instead of deprecated MasterKeys
 import com.csugprojects.recipeapp.data.api.RecipeApiService
 import com.csugprojects.recipeapp.data.local.RecipeDatabase
 import com.csugprojects.recipeapp.data.repository.RecipeRepositoryImpl
@@ -12,10 +12,10 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 class AppContainer(context: Context) {
-    private val BASE_URL = "https://www.themealdb.com/api/json/v1/1/"
+    private val baseUrl = "https://www.themealdb.com/api/json/v1/1/"
 
     private val retrofit = Retrofit.Builder()
-        .baseUrl(BASE_URL)
+        .baseUrl(baseUrl)
         .addConverterFactory(GsonConverterFactory.create())
         .build()
 
@@ -31,21 +31,26 @@ class AppContainer(context: Context) {
         ).build()
     }
 
-    // --- MILESTONE 6: SECURITY IMPLEMENTATION ---
-    // 1. Define Master Key Alias
-    private val masterKeyAlias = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
+    // --- MILESTONE 6: SECURITY IMPLEMENTATION (Modern/Non-Deprecated) ---
 
-    // 2. Initialize EncryptedSharedPreferences for securing preferences/tokens
+    // 1. Create or get the master key using the modern Builder pattern
+    private val masterKey: MasterKey by lazy {
+        MasterKey.Builder(context.applicationContext)
+            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+            .build()
+    }
+
+    // 2. Initialize EncryptedSharedPreferences using the MasterKey object
     val securePreferences by lazy {
         EncryptedSharedPreferences.create(
-            "secure_app_prefs", // The name of the file to store your encrypted preferences
-            masterKeyAlias,
             context.applicationContext,
+            "secure_app_prefs", // The name of the file to store your encrypted preferences
+            masterKey, // Use the non-deprecated MasterKey object
             EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
             EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
         )
     }
-    // ---------------------------------------------
+    // -----------------------------------------------------------------
 
     val recipeRepository: RecipeRepository by lazy {
         RecipeRepositoryImpl(
