@@ -10,43 +10,44 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-// UPDATED IMPORT: Use the new Global ViewModel
 import com.csugprojects.recipeapp.ui.viewmodel.GlobalRecipeOperationsViewModel
-// ADDED IMPORT: Needed for the RecipeCard composable
-import com.csugprojects.recipeapp.ui.list.RecipeCard
 
 
+/**
+ * FavoriteRecipeScreen displays the list of user-saved recipes (View Layer - M2 Feature).
+ * This screen demonstrates the application's offline support (M4 Persistence).
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FavoriteRecipeScreen(
-    // CHANGED PARAMETER: Use the GlobalRecipeOperationsViewModel
     viewModel: GlobalRecipeOperationsViewModel,
     onRecipeClick: (String) -> Unit
-    // Removed: onBackClick: () -> Unit
 ) {
+    // Collects the list of favorite recipes from the Global ViewModel (M6 State Management).
     val favoriteRecipes by viewModel.favoriteRecipes.collectAsState()
 
-    // UI Fix: Use a simple Column/Box structure as Scaffold is handled in MainActivity
     Column(
         modifier = Modifier.fillMaxSize()
     ) {
-        // Use a simple text title instead of TopAppBar for this inner screen
+        // Simple title display, relying on MainActivity for Scaffold structure.
         Text(
             text = "Your Favorites",
             style = MaterialTheme.typography.headlineMedium,
             modifier = Modifier.padding(top = 16.dp, start = 16.dp)
         )
 
+        // Conditional rendering: shows a message if no recipes are saved.
         if (favoriteRecipes.isEmpty()) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .weight(1f), // Take remaining space
+                    .weight(1f),
                 contentAlignment = Alignment.Center
             ) {
                 Text("You haven't saved any recipes yet.")
             }
         } else {
+            // LazyColumn efficiently renders the scrollable list of recipe cards.
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
@@ -55,11 +56,13 @@ fun FavoriteRecipeScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 items(favoriteRecipes) { recipe ->
+                    // Uses the reusable RecipeCard component (M2 Component Description).
                     RecipeCard(
+                        // Ensures the card always shows the filled favorite icon.
                         recipe = recipe.copy(isFavorite = true),
                         onClick = { onRecipeClick(recipe.id) },
+                        // Handles removal/addition of the favorite item via the ViewModel (M6 Operation).
                         onFavoriteClick = { isFavorite ->
-                            // FIX: The logic was inverted. If 'isFavorite' is true, ADD it; otherwise, REMOVE it.
                             if (isFavorite) {
                                 viewModel.addFavorite(recipe)
                             } else {
