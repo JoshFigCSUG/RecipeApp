@@ -15,10 +15,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.csugprojects.recipeapp.domain.model.Recipe
-// ADDED IMPORT for FontFamily
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 
+/**
+ * RecipeCard is the custom, reusable component for displaying a single recipe summary (View Layer - M2 Component).
+ * It is used by the list and home screens to display scrollable content.
+ */
 @Composable
 fun RecipeCard(
     recipe: Recipe,
@@ -38,20 +41,24 @@ fun RecipeCard(
                     .fillMaxWidth()
                     .height(200.dp)
             ) {
+                // AsyncImage uses the Coil library to load images from the network (M4 Implementation).
                 AsyncImage(
                     model = recipe.imageUrl,
                     contentDescription = "Image of ${recipe.title}",
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize()
                 )
+                // IconButton manages the favorite status logic (M2 Feature).
                 IconButton(
                     onClick = { onFavoriteClick(!recipe.isFavorite) },
                     modifier = Modifier
                         .align(Alignment.TopEnd)
                         .padding(8.dp)
                 ) {
+                    // Icon image changes based on the recipe's current favorite status (M6 State Management).
                     Icon(
                         imageVector = if (recipe.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                        // Content description ensures accessibility (M2 Accessibility).
                         contentDescription = "Favorite",
                         tint = if (recipe.isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onPrimary
                     )
@@ -61,7 +68,7 @@ fun RecipeCard(
                 text = recipe.title,
                 style = MaterialTheme.typography.titleLarge.copy(
                     fontFamily = FontFamily.Cursive,
-                    fontWeight = FontWeight.Bold), // FIXED: Applied Cursive font family
+                    fontWeight = FontWeight.Bold),
                 modifier = Modifier.padding(16.dp),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
