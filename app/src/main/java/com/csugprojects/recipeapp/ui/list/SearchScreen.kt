@@ -18,12 +18,15 @@ import kotlin.text.isLetter
 import androidx.compose.runtime.collectAsState
 import com.csugprojects.recipeapp.ui.viewmodel.GlobalRecipeOperationsViewModel
 import com.csugprojects.recipeapp.ui.viewmodel.RecipeListViewModel
-import com.csugprojects.recipeapp.ui.list.RecipeCard
 import com.csugprojects.recipeapp.domain.model.Name
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 
 
+/**
+ * RecipeListScreen serves as the search and filtering hub (View Layer - M2 Feature).
+ * It observes data streams from both the RecipeListViewModel and the GlobalRecipeOperationsViewModel.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecipeListScreen(
@@ -31,23 +34,23 @@ fun RecipeListScreen(
     globalViewModel: GlobalRecipeOperationsViewModel,
     onRecipeClick: (String) -> Unit
 ) {
-    // Collect list states from List ViewModel
+    // Collects states specific to list fetching and search query (M6 State Management).
     val recipes by listViewModel.recipes
     val searchQuery by listViewModel.searchQuery
     val isLoading by listViewModel.isLoading
     val errorMessage by listViewModel.errorMessage
     val categoriesState by listViewModel.categories
 
-    // Collect global favorites state from Global ViewModel
+    // Collects global favorites state to correctly display favorite status on each card (M6 State Management).
     val favoriteRecipesList by globalViewModel.favoriteRecipes.collectAsState()
     val favoriteIds = remember(favoriteRecipesList) {
         favoriteRecipesList.map { it.id }.toSet()
     }
 
-    // Collect Areas state for filtering
+    // Collects lists used for filter chips (M6 Feature).
     val areasState by listViewModel.areas
 
-    // Collect selected filter states
+    // Tracks which filter chip is currently selected.
     val selectedCategory by listViewModel.selectedCategory
     val selectedArea by listViewModel.selectedArea
     val selectedIngredient by listViewModel.selectedIngredient
@@ -55,12 +58,12 @@ fun RecipeListScreen(
     var active by rememberSaveable { mutableStateOf(false) }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        // --- Material 3 SearchBar Implementation ---
+        // SearchBar component handles user input (M2 Component).
         SearchBar(
             query = searchQuery,
             onQueryChange = { listViewModel.onSearchQueryChanged(it) },
+            // Triggers the dual search (by name and ingredient) defined in the ViewModel (M6 Implementation).
             onSearch = {
-                // FIX/CLEANUP: The search query is passed directly for a broad search (name and ingredient)
                 listViewModel.searchRecipes(favoriteIds)
                 active = false
             },
@@ -79,11 +82,11 @@ fun RecipeListScreen(
                 modifier = Modifier.padding(16.dp)
             )
         }
-        // --- End SearchBar ---
 
+        // Column scrolls to allow space for all filter bars.
         Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
 
-            // --- 1. Horizontal Category Filter Bar ---
+            // Horizontal Filter Bars for navigation/filtering (M6 Feature).
             Text("Categories", style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(start = 16.dp, top = 8.dp))
             CategoryFilterBar(
                 categoriesState = categoriesState,
@@ -94,7 +97,6 @@ fun RecipeListScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // --- 2. Horizontal Area Filter Bar ---
             Text("Areas", style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(start = 16.dp))
             AreaFilterBar(
                 areasState = areasState,
@@ -105,7 +107,6 @@ fun RecipeListScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // --- 3. Horizontal Ingredient Filter Bar ---
             Text("Common Ingredients", style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(start = 16.dp))
             IngredientFilterBar(
                 selectedFilter = selectedIngredient,
@@ -117,7 +118,7 @@ fun RecipeListScreen(
         }
 
 
-        // --- Main Content Display (LazyColumn for Search Results) ---
+        // Main Content display area for search results.
         if (isLoading) {
             Box(
                 modifier = Modifier.fillMaxSize(),
@@ -126,6 +127,7 @@ fun RecipeListScreen(
                 CircularProgressIndicator()
             }
         } else if (errorMessage != null) {
+            // Displays error messages received from the Repository/ViewModel (M4 Error Handling).
             Text(
                 text = errorMessage!!,
                 modifier = Modifier
@@ -134,6 +136,7 @@ fun RecipeListScreen(
                 color = MaterialTheme.colorScheme.error
             )
         } else {
+            // LazyColumn displays the search and filter results.
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(16.dp),
@@ -144,9 +147,11 @@ fun RecipeListScreen(
                     key = { it.id }
                 ) { recipe ->
                     val currentIsFavorite = favoriteIds.contains(recipe.id)
+                    // Uses the reusable RecipeCard component (M2 Component).
                     RecipeCard(
                         recipe = recipe.copy(isFavorite = currentIsFavorite),
                         onClick = { onRecipeClick(recipe.id) },
+                        // Calls the Global ViewModel to modify persistent favorite status (M2/M6 Operation).
                         onFavoriteClick = { isFavorite ->
                             if (isFavorite) {
                                 globalViewModel.addFavorite(recipe)
@@ -161,7 +166,9 @@ fun RecipeListScreen(
     }
 }
 
-// --- Filter Composables ---
+/**
+ * Filter Composables define the horizontal filter bars (M6 Feature).
+ */
 @Composable
 fun CategoryFilterBar(
     categoriesState: Result<List<Category>>,
@@ -169,6 +176,7 @@ fun CategoryFilterBar(
     favoriteIds: Set<String>,
     listViewModel: RecipeListViewModel
 ) {
+    // Displays based on the state of the categories fetch (Loading, Success, or Error).
     when (categoriesState) {
         is Result.Loading -> {
             CircularProgressIndicator(
@@ -184,6 +192,7 @@ fun CategoryFilterBar(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
+                // Creates a clickable FilterChip for each category.
                 items(categoriesState.data.take(10), key = { it.id }) { category ->
                     FilterChip(
                         selected = selectedFilter == category.name,
@@ -227,6 +236,7 @@ fun AreaFilterBar(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
+                // Creates a clickable FilterChip for each area.
                 items(areasState.data.take(10), key = { it.name }) { area ->
                     FilterChip(
                         selected = selectedFilter == area.name,
@@ -254,7 +264,7 @@ fun IngredientFilterBar(
     favoriteIds: Set<String>,
     listViewModel: RecipeListViewModel
 ) {
-    // Hardcoded common ingredients for a simple horizontal scroll
+    // Hardcoded common ingredients for a simple horizontal scroll (M6 Feature).
     val commonIngredients = listOf("Chicken", "Beef", "Salmon", "Cheese", "Pasta")
 
     LazyRow(
