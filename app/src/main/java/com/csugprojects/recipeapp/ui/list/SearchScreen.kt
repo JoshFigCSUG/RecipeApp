@@ -14,7 +14,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.csugprojects.recipeapp.domain.model.Category
 import com.csugprojects.recipeapp.util.Result
-import kotlin.text.isLetter
 import androidx.compose.runtime.collectAsState
 import com.csugprojects.recipeapp.ui.viewmodel.GlobalRecipeOperationsViewModel
 import com.csugprojects.recipeapp.ui.viewmodel.RecipeListViewModel
