@@ -1,4 +1,4 @@
-package com.csugprojects.recipeapp
+package com.csugprojects.recipeapp.di
 
 import android.app.Application
 

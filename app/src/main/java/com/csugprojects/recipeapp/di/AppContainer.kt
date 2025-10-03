@@ -1,9 +1,9 @@
-package com.csugprojects.recipeapp
+package com.csugprojects.recipeapp.di
 
 import android.content.Context
 import androidx.room.Room
 import androidx.security.crypto.EncryptedSharedPreferences
-import androidx.security.crypto.MasterKey // UPDATED: Use MasterKey instead of deprecated MasterKeys
+import androidx.security.crypto.MasterKey
 import com.csugprojects.recipeapp.data.api.RecipeApiService
 import com.csugprojects.recipeapp.data.local.RecipeDatabase
 import com.csugprojects.recipeapp.data.repository.RecipeRepositoryImpl

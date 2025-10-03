@@ -1,4 +1,4 @@
-package com.csugprojects.recipeapp.ui.navigation
+package com.csugprojects.recipeapp.ui.nav
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite

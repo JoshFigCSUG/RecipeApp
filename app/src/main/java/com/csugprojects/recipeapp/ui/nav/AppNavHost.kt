@@ -1,4 +1,4 @@
-package com.csugprojects.recipeapp.ui.navigation
+package com.csugprojects.recipeapp.ui.nav
 
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
@@ -10,7 +10,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.NavHostController
 import androidx.navigation.navArgument
-import com.csugprojects.recipeapp.AppContainer
+import com.csugprojects.recipeapp.di.AppContainer
 // UPDATED IMPORTS to the new viewmodel package
 import com.csugprojects.recipeapp.ui.viewmodel.GlobalRecipeOperationsViewModel
 import com.csugprojects.recipeapp.ui.viewmodel.RecipeListViewModel

@@ -1,7 +1,5 @@
-package com.csugprojects.recipeapp.ui.navigation
+package com.csugprojects.recipeapp.ui.nav
 
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue

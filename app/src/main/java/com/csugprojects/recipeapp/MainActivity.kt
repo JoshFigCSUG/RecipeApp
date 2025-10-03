@@ -1,4 +1,4 @@
-package com.csugprojects.recipeapp.ui
+package com.csugprojects.recipeapp
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -10,10 +10,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.rememberNavController
-import com.csugprojects.recipeapp.AppContainer
-import com.csugprojects.recipeapp.MyApp
-import com.csugprojects.recipeapp.ui.navigation.AppBottomNav // NEW IMPORT
-import com.csugprojects.recipeapp.ui.navigation.AppNavHost // NEW IMPORT
+import com.csugprojects.recipeapp.di.AppContainer
+import com.csugprojects.recipeapp.di.MyApp
+import com.csugprojects.recipeapp.ui.nav.AppBottomNav // NEW IMPORT
+import com.csugprojects.recipeapp.ui.nav.AppNavHost // NEW IMPORT
 import com.csugprojects.recipeapp.ui.theme.RecipeAppTheme
 
 class MainActivity : ComponentActivity() {
