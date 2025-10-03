@@ -1,6 +1,6 @@
 package com.csugprojects.recipeapp.ui.detail
 
-import androidx.compose.animation.animateContentSize // ADDED: Import for animation
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -8,7 +8,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.*
-import androidx.compose.runtime.* // Correct import for collectAsState()
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -31,31 +31,35 @@ import com.csugprojects.recipeapp.ui.viewmodel.RecipeViewModelFactory
 import com.csugprojects.recipeapp.util.Result
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import androidx.compose.runtime.collectAsState // Explicit, correct import
+import androidx.compose.runtime.collectAsState
 
+/**
+ * RecipeDetailScreen is the composable function for displaying a single recipe (View Layer - M2/M4).
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecipeDetailScreen(
     recipeId: String,
-    detailViewModel: RecipeDetailViewModel, // ViewModel for fetching recipe details
-    globalViewModel: GlobalRecipeOperationsViewModel, // ViewModel for favorites and recently viewed
+    detailViewModel: RecipeDetailViewModel,
+    globalViewModel: GlobalRecipeOperationsViewModel,
     onBackClick: () -> Unit
 ) {
-    // OBSERVE STATES FROM SEPARATE VIEWMODELS
+    // Observes the global state of favorite recipes for status updates (M6 State Management).
     val favoriteRecipes by globalViewModel.favoriteRecipes.collectAsState()
-    val recipeState by detailViewModel.recipeState.collectAsState() // Observe StateFlow directly
+    // Observes the detailed recipe state from the ViewModel (M4 Error Handling via Result<T>).
+    val recipeState by detailViewModel.recipeState.collectAsState()
 
-    // Calculate favorite status based on global state
+    // Determines if the current recipe ID is present in the global favorites list.
     val isFavorite = remember(favoriteRecipes) {
         favoriteRecipes.any { it.id == recipeId }
     }
 
-    // --- Data Fetching and Side Effects ---
+    // Triggers the network request to fetch recipe details when the screen opens (M2/M4 Data Flow).
     LaunchedEffect(recipeId) {
         detailViewModel.getRecipeDetails(recipeId)
     }
 
-    // Log recipe to "Recently Viewed" upon successful fetch
+    // Adds the successfully fetched recipe to the "Recently Viewed" list (M6 Feature).
     LaunchedEffect(recipeState) {
         if (recipeState is Result.Success) {
             val recipe = (recipeState as Result.Success<Recipe>).data
@@ -68,6 +72,7 @@ fun RecipeDetailScreen(
             TopAppBar(
                 title = { Text(text = "Recipe Details") },
                 navigationIcon = {
+                    // Back button implements navigation control (M2 Navigation Flow).
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Go back")
                     }
@@ -77,9 +82,9 @@ fun RecipeDetailScreen(
         modifier = Modifier.fillMaxSize()
     ) { paddingValues ->
         Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+            // Displays UI based on the state of the data flow (Loading, Success, or Error).
             when (val state = recipeState) {
                 is Result.Loading -> {
-                    // When loading, content size is small (CircularProgressIndicator)
                     CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                 }
                 is Result.Success -> {
@@ -87,12 +92,11 @@ fun RecipeDetailScreen(
                     RecipeDetailContent(
                         recipe = recipe,
                         isFavorite = isFavorite,
+                        // Toggles favorite status via the Global ViewModel (M6 Shared Operations).
                         onFavoriteClick = {
                             if (isFavorite) {
-                                // Calls globalViewModel for shared action
                                 globalViewModel.removeFavorite(recipe.id)
                             } else {
-                                // Calls globalViewModel for shared action
                                 globalViewModel.addFavorite(recipe)
                             }
                         },
@@ -100,6 +104,7 @@ fun RecipeDetailScreen(
                     )
                 }
                 is Result.Error -> {
+                    // Displays an error message to the user on failure (M4 Error Handling/Recovery).
                     Text(
                         state.exception.message ?: "An error occurred",
                         modifier = Modifier.align(Alignment.Center),
@@ -111,7 +116,9 @@ fun RecipeDetailScreen(
     }
 }
 
-// --- Mock Repository for Preview (FIXED) ---
+/**
+ * Mock implementation of the Repository to support Compose Previews (M8 Testing Strategy).
+ */
 private class MockRecipeRepository : RecipeRepository {
     private val mockRecipe = Recipe(
         id = "52772",
@@ -123,8 +130,8 @@ private class MockRecipeRepository : RecipeRepository {
             Ingredient("Soy Sauce", "1/4 cup"),
             Ingredient("Sugar", "2 tbsp")
         ),
-        category = "Chicken", // FIXED: Added value for category
-        area = "Japanese",     // FIXED: Added value for area
+        category = "Chicken",
+        area = "Japanese",
         isFavorite = false
     )
 
@@ -142,6 +149,9 @@ private class MockRecipeRepository : RecipeRepository {
     override suspend fun filterByIngredient(ingredient: String): Result<List<Recipe>> = Result.Success(emptyList())
 }
 
+/**
+ * Composable responsible for rendering the full recipe content and layout.
+ */
 @Composable
 fun RecipeDetailContent(
     recipe: Recipe,
@@ -152,12 +162,10 @@ fun RecipeDetailContent(
     val scrollState = rememberScrollState()
 
     Column(
-        // MILESTONE 6 UX FIX: Apply animateContentSize to the main content Column
-        // This ensures the screen layout animates smoothly as the large image loads
-        // and content shifts or expands, fulfilling the animation requirement.
+        // Applies a smooth transition animation when content size changes (M6 UX Enhancement).
         modifier = modifier
             .verticalScroll(scrollState)
-            .animateContentSize() // ADDED for smooth expansion
+            .animateContentSize()
     ) {
         Box(
             modifier = Modifier
@@ -166,6 +174,7 @@ fun RecipeDetailContent(
         ) {
             AsyncImage(
                 model = recipe.imageUrl,
+                // Content description aids accessibility (M2 Accessibility).
                 contentDescription = "Image of ${recipe.title}",
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()
@@ -178,7 +187,7 @@ fun RecipeDetailContent(
             ) {
                 Icon(
                     imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                    contentDescription = "Favorite",
+                    contentDescription = "Favorite button for ${recipe.title}",
                     tint = if (isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onPrimary
                 )
             }
@@ -192,7 +201,7 @@ fun RecipeDetailContent(
                 modifier = Modifier.padding(bottom = 8.dp)
             )
 
-            // Display Category and Area if available
+            // Displays metadata like Category and Cuisine/Area (M6 Features).
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -216,7 +225,7 @@ fun RecipeDetailContent(
             }
 
 
-            // Ingredients
+            // Section for listing ingredients.
             Text(
                 text = "Ingredients",
                 style = MaterialTheme.typography.titleLarge,
@@ -231,7 +240,7 @@ fun RecipeDetailContent(
                 )
             }
 
-            // Instructions
+            // Section for displaying preparation instructions.
             Text(
                 text = "Instructions",
                 style = MaterialTheme.typography.titleLarge,
@@ -246,13 +255,15 @@ fun RecipeDetailContent(
     }
 }
 
+/**
+ * Preview function that uses the MockRepository for visual design validation (M8 Testing).
+ */
 @Preview
 @Composable
 fun RecipeDetailScreenPreview() {
     val mockRepo = MockRecipeRepository()
     val factory = object : androidx.lifecycle.ViewModelProvider.Factory {
         override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
-            // Updated to instantiate the new ViewModels
             if (modelClass.isAssignableFrom(GlobalRecipeOperationsViewModel::class.java)) {
                 @Suppress("UNCHECKED_CAST")
                 return GlobalRecipeOperationsViewModel(mockRepo) as T
