@@ -11,7 +11,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.NavHostController
 import androidx.navigation.navArgument
 import com.csugprojects.recipeapp.di.AppContainer
-// UPDATED IMPORTS to the new viewmodel package
 import com.csugprojects.recipeapp.ui.viewmodel.GlobalRecipeOperationsViewModel
 import com.csugprojects.recipeapp.ui.viewmodel.RecipeListViewModel
 import com.csugprojects.recipeapp.ui.viewmodel.RecipeDetailViewModel
@@ -21,13 +20,16 @@ import com.csugprojects.recipeapp.ui.list.FavoriteRecipeScreen
 import com.csugprojects.recipeapp.ui.list.HomeScreen
 import com.csugprojects.recipeapp.ui.list.RecipeListScreen
 
+/**
+ * AppNavHost sets up the Navigation Compose graph and links destinations to their ViewModels (M2/M4 Architecture).
+ */
 @Composable
 fun AppNavHost(navController: NavHostController, appContainer: AppContainer, paddingValues: PaddingValues) {
 
-    // 1. Instantiate the factory once
+    // Creates the ViewModel Factory using the shared Repository (M4 Dependency Injection).
     val factory = RecipeViewModelFactory(appContainer.recipeRepository)
 
-    // 2. Instantiate the two global/shared ViewModels (scoped to the entire NavHost)
+    // Instantiates shared ViewModels (Global and List) scoped to the entire NavHost lifetime.
     val globalViewModel: GlobalRecipeOperationsViewModel = viewModel(factory = factory)
     val listViewModel: RecipeListViewModel = viewModel(factory = factory)
 
@@ -36,7 +38,7 @@ fun AppNavHost(navController: NavHostController, appContainer: AppContainer, pad
         startDestination = Screen.Home.route,
         modifier = Modifier.padding(paddingValues)
     ) {
-        // 1. HOME SCREEN (Needs Global VM for random recipe, favorites, and recently viewed)
+        // HOME SCREEN (M2 Primary Destination)
         composable(Screen.Home.route) {
             HomeScreen(
                 viewModel = globalViewModel,
@@ -49,7 +51,7 @@ fun AppNavHost(navController: NavHostController, appContainer: AppContainer, pad
             )
         }
 
-        // 2. SEARCH RESULTS SCREEN (Needs List VM for search/filter, and Global VM for favorite actions/status)
+        // SEARCH RESULTS SCREEN (M2/M6 Search and Filtering Hub)
         composable(Screen.Search.route) {
             RecipeListScreen(
                 listViewModel = listViewModel,
@@ -60,7 +62,7 @@ fun AppNavHost(navController: NavHostController, appContainer: AppContainer, pad
             )
         }
 
-        // 3. FAVORITES SCREEN (Needs Global VM for the favorites list and manipulation)
+        // FAVORITES SCREEN (M2/M4 Persistence Feature)
         composable(Screen.Favorites.route) {
             FavoriteRecipeScreen(
                 viewModel = globalViewModel,
@@ -70,12 +72,13 @@ fun AppNavHost(navController: NavHostController, appContainer: AppContainer, pad
             )
         }
 
-        // 4. DETAIL SCREEN (Needs Detail VM for fetch and Global VM for favorite actions/logging)
+        // DETAIL SCREEN (M2 Deep Link Destination)
         composable(
             Screen.Detail.route,
+            // Defines the recipeId argument required for fetching details.
             arguments = listOf(navArgument("recipeId") { type = NavType.StringType })
         ) { backStackEntry ->
-            // Instantiate the Detail ViewModel scoped to this composable
+            // Instantiates the Detail ViewModel, scoped only to this composable (M4 MVVM).
             val detailViewModel: RecipeDetailViewModel = viewModel(factory = factory)
 
             val recipeId = backStackEntry.arguments?.getString("recipeId")
