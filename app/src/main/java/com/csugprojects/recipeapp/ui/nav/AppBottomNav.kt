@@ -7,47 +7,42 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 
+/**
+ * AppBottomNav defines the persistent navigation bar used at the bottom of the screen (View Layer - M2/M4).
+ */
 @Composable
 fun AppBottomNav(navController: NavHostController) {
-    // New list of items for the NavigationBar, including Search
+    // Defines the primary destinations accessible from the bottom bar (M2 Navigation Flow).
     val navItems = listOf(Screen.Home, Screen.Search, Screen.Favorites)
 
     NavigationBar {
         val navBackStackEntry by navController.currentBackStackEntryAsState()
-        // currentRoute captures the base route (e.g., "home", "favorites", "search")
+        // Identifies the currently visible route to manage selection state.
         val currentRoute = navBackStackEntry?.destination?.route
 
         navItems.forEach { screen ->
-            // Check if the current route matches the screen route, OR if the current screen
-            // is a detail screen that originated from a main tab (Home/Favorites/Search).
             val isSelected = currentRoute == screen.route
-            // Add logic to highlight when on a Detail page that branched from this screen
-            // For simplicity, we stick to checking the direct route:
 
             NavigationBarItem(
                 icon = { Icon(screen.icon, contentDescription = screen.label) },
                 label = { Text(screen.label) },
                 selected = isSelected,
                 onClick = {
-                    val isHome = screen.route == Screen.Home.route // Determine if target is Home
+                    val isHome = screen.route == Screen.Home.route // Logic handles unique requirements for Home.
 
-                    // Navigate to the target screen (Home, Search, or Favorites)
+                    // Navigates to the selected destination while managing the back stack (M2/M8 Maintenance).
                     navController.navigate(screen.route) {
-                        // FIX 1: Pop up to the very first destination of the NavHost's graph.
-                        // This clears any intermediate Detail screens that were pushed.
+                        // Clears the back stack up to the start destination to prevent deep nesting of screens.
                         popUpTo(navController.graph.findStartDestination().id) {
-                            // Setting inclusive = false ensures the 'Home' screen is preserved on the stack.
                             inclusive = false
-                            // Save state for the other main tabs (Favorites, Search)
-                            saveState = !isHome // Only save state for Search/Favorites
+                            // Saves the state (e.g., search results) for non-Home tabs.
+                            saveState = !isHome
                         }
 
-                        // FIX 2 (CRITICAL RESET FIX):
-                        // launchSingleTop = false for Home allows navigation to occur even if already on the screen,
-                        // forcing a re-composition/reset. For others, it keeps the single-top behavior.
+                        // Ensures Home screen forces a full recomposition/reset when clicked again.
                         launchSingleTop = !isHome
 
-                        // FIX 3: Only restore state for Search/Favorites.
+                        // Restores state only for Search and Favorites tabs.
                         restoreState = !isHome
                     }
                 }
