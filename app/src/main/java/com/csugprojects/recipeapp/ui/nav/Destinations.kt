@@ -6,36 +6,49 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.ui.graphics.vector.ImageVector
 
-// The file location shown in the error is 'ui/nav', but I will use the established 'ui/navigation' package
-// based on previous context. If the file is in 'ui/nav', you must change the package line below.
-
-// FIX: Ensure all primary constructor parameters have explicit types (String, String, ImageVector)
+/**
+ * Screen defines the sealed class for all possible navigation routes (M2 Navigation Flow).
+ * This structure makes navigation type-safe and centralizes route definitions (M4 Design).
+ */
 sealed class Screen(val route: String, val label: String, val icon: ImageVector) {
 
-    // Primary Bottom Bar Destinations
-    // FIX: Icons.Default.Home/Search/Favorite are correctly passed as ImageVector types.
+    // --- Primary Bottom Bar Destinations ---
+
+    /**
+     * The initial landing page route.
+     */
     object Home : Screen(
         route = "home",
         label = "Home",
         icon = Icons.Default.Home
     )
 
+    /**
+     * The primary screen for searching and filtering recipes (M2 Feature).
+     */
     object Search : Screen(
         route = "search",
         label = "Search",
         icon = Icons.Default.Search
     )
 
+    /**
+     * The screen for viewing locally saved favorite recipes (M2 Feature/M4 Persistence).
+     */
     object Favorites : Screen(
         route = "favorites",
         label = "Favorites",
         icon = Icons.Default.Favorite
     )
 
-    // Child/Deep Link Destination
+    // --- Child/Deep Link Destination ---
+
+    /**
+     * The detail view for a single recipe, accepting a recipe ID as an argument.
+     */
     object Detail : Screen(
         route = "recipeDetail/{recipeId}",
         label = "Details",
-        icon = Icons.Default.Favorite // Placeholder icon, but correctly typed
+        icon = Icons.Default.Favorite
     )
 }
