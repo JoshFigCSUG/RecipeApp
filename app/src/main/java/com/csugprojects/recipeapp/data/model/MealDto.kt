@@ -5,13 +5,19 @@ import com.csugprojects.recipeapp.domain.model.Recipe
 import com.csugprojects.recipeapp.domain.model.Ingredient
 import com.csugprojects.recipeapp.data.local.RecipeEntity
 
+/**
+ * MealListDto and MealDto define the Data Transfer Objects (DTOs) for the Model Layer (M4 Design).
+ * These classes directly map the JSON structure received from TheMealDB API endpoints.
+ */
 data class MealListDto(
     @SerializedName("meals")
+    // MealListDto wraps the array of meals returned by the search/lookup API endpoints.
     val meals: List<MealDto>?
 )
 
 data class MealDto(
     @SerializedName("idMeal")
+    // Unique ID used for lookup and persistence (M2/M4).
     val idMeal: String,
     @SerializedName("strMeal")
     val strMeal: String,
@@ -19,12 +25,14 @@ data class MealDto(
     val strMealThumb: String?,
     @SerializedName("strInstructions")
     val strInstructions: String?,
-    // FIX START: ADDED MISSING FIELDS FROM API
+
+    // Core fields included for complete recipe detail (M2/M4).
     @SerializedName("strCategory")
     val strCategory: String?,
     @SerializedName("strArea")
     val strArea: String?,
-    // FIX END
+
+    // Fields for up to 20 ingredients and measures, matching the API structure.
     @SerializedName("strIngredient1")
     val strIngredient1: String?,
     @SerializedName("strIngredient2")
@@ -106,6 +114,10 @@ data class MealDto(
     @SerializedName("strMeasure20")
     val strMeasure20: String?
 ) {
+    /**
+     * Converts the raw DTO model from the API into the clean, internal Recipe domain model (M4 Mapping).
+     * This function iterates through the 20 ingredient/measure fields to build a proper list.
+     */
     fun toRecipe(): Recipe {
         val ingredients = mutableListOf<Ingredient>()
         val measures = mutableListOf(
@@ -124,6 +136,7 @@ data class MealDto(
         for (i in ingredientNames.indices) {
             val name = ingredientNames[i]?.trim()
             val measure = measures[i]?.trim()
+            // Only add the ingredient if both the name and measure fields are present and not empty.
             if (!name.isNullOrBlank() && !measure.isNullOrBlank()) {
                 ingredients.add(Ingredient(name, measure))
             }
