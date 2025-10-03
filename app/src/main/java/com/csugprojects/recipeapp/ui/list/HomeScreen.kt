@@ -103,6 +103,7 @@ fun HomeScreen(
                 CircularProgressIndicator()
             }
             is Result.Success -> {
+                // Accesses data directly, as Result.Success guarantees its presence.
                 state.data.let { recipe ->
                     val currentIsFavorite = favoriteIds.contains(recipe.id)
                     // Uses the standard RecipeCard component (M2 Component Description).
@@ -135,7 +136,7 @@ fun HomeScreen(
 }
 
 /**
- * SmallRecipeCard defines a compact, reusable UI card for horizontal lists.
+ * SmallRecipeCard defines a compact, reusable UI card for horizontal lists (M2 Component).
  */
 @Composable
 fun SmallRecipeCard(
