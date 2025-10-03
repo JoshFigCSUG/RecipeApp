@@ -9,13 +9,17 @@ import com.csugprojects.recipeapp.domain.model.Name
 import com.csugprojects.recipeapp.domain.model.Recipe
 import com.csugprojects.recipeapp.domain.repository.RecipeRepository
 import com.csugprojects.recipeapp.util.Result
-// NEW IMPORTS for concurrent operations
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 
+/**
+ * RecipeListViewModel manages the state and business logic for the Search screen (ViewModel Layer - M2/M4).
+ * It handles search queries, filtering, and API lookup data.
+ */
 class RecipeListViewModel(private val repository: RecipeRepository) : ViewModel() {
 
     // --- LIST STATES (Results of search/filter) ---
+    // State properties hold the data that the UI observes (M6 State Management).
     private val _recipes = mutableStateOf<List<Recipe>>(emptyList())
     val recipes: State<List<Recipe>> = _recipes
 
@@ -25,10 +29,12 @@ class RecipeListViewModel(private val repository: RecipeRepository) : ViewModel(
     private val _isLoading = mutableStateOf(false)
     val isLoading: State<Boolean> = _isLoading
 
+    // Exposes errors that occur during API calls (M4 Error Handling).
     private val _errorMessage = mutableStateOf<String?>(null)
     val errorMessage: State<String?> = _errorMessage
 
     // --- FILTER/CATEGORY STATES (Lookups) ---
+    // States hold data used to build the filter chips (M6 Feature).
     private val _categories = mutableStateOf<Result<List<Category>>>(Result.Loading)
     val categories: State<Result<List<Category>>> = _categories
 
@@ -36,6 +42,7 @@ class RecipeListViewModel(private val repository: RecipeRepository) : ViewModel(
     val areas: State<Result<List<Name>>> = _areas
 
     // --- Selected Filter States for Persistence ---
+    // These track the currently active filter chip.
     private val _selectedCategory = mutableStateOf<String?>(null)
     val selectedCategory: State<String?> = _selectedCategory
 
@@ -46,6 +53,7 @@ class RecipeListViewModel(private val repository: RecipeRepository) : ViewModel(
     val selectedIngredient: State<String?> = _selectedIngredient
 
     init {
+        // Fetches filter options immediately when the ViewModel is created.
         fetchCategories()
         fetchAreas()
     }
@@ -57,7 +65,7 @@ class RecipeListViewModel(private val repository: RecipeRepository) : ViewModel(
     }
 
     /**
-     * Executes a DUAL search (by name AND by ingredient) to overcome API strictness.
+     * Executes a dual search (by name AND by ingredient) to improve result reliability (M6 Implementation).
      */
     fun searchRecipes(favoriteIds: Set<String>) {
         if (_searchQuery.value.isBlank()) return
@@ -69,9 +77,9 @@ class RecipeListViewModel(private val repository: RecipeRepository) : ViewModel(
 
             val query = _searchQuery.value
 
-            // Execute both API calls concurrently
+            // Executes both API calls concurrently using async/await (M6 Concurrency/Performance).
             val nameSearchResultDeferred = async { repository.searchRecipes(query) }
-            val ingredientFilterResultDeferred = async { repository.filterByIngredient(query) } // Use ingredient filter as broad search
+            val ingredientFilterResultDeferred = async { repository.filterByIngredient(query) }
 
             val nameResult = nameSearchResultDeferred.await()
             val ingredientResult = ingredientFilterResultDeferred.await()
@@ -79,7 +87,7 @@ class RecipeListViewModel(private val repository: RecipeRepository) : ViewModel(
             val combinedRecipes = mutableListOf<Recipe>()
             val seenIds = mutableSetOf<String>()
 
-            // 1. Process Name Search Results (Higher detail)
+            // 1. Process Name Search Results
             if (nameResult is Result.Success) {
                 nameResult.data.forEach { recipe ->
                     if (seenIds.add(recipe.id)) {
@@ -88,7 +96,7 @@ class RecipeListViewModel(private val repository: RecipeRepository) : ViewModel(
                 }
             }
 
-            // 2. Process Ingredient Filter Results (More reliable hits)
+            // 2. Process Ingredient Filter Results
             if (ingredientResult is Result.Success) {
                 ingredientResult.data.forEach { recipe ->
                     if (seenIds.add(recipe.id)) {
@@ -97,16 +105,17 @@ class RecipeListViewModel(private val repository: RecipeRepository) : ViewModel(
                 }
             }
 
-            // 3. Handle combined result states
+            // 3. Determines the final state of the search operation (M4 Error Handling).
             val finalResult = when {
                 combinedRecipes.isNotEmpty() -> Result.Success(combinedRecipes)
-                nameResult is Result.Error -> nameResult // Prioritize error from main search
+                nameResult is Result.Error -> nameResult
                 ingredientResult is Result.Error -> ingredientResult
                 else -> Result.Error(Exception("No recipes found for '$query'"))
             }
 
             when (finalResult) {
                 is Result.Success -> {
+                    // Updates the recipe list and checks favorite status against global state.
                     _recipes.value = finalResult.data.map { recipe ->
                         recipe.copy(isFavorite = favoriteIds.contains(recipe.id))
                     }
@@ -135,7 +144,7 @@ class RecipeListViewModel(private val repository: RecipeRepository) : ViewModel(
         _isLoading.value = true
         _errorMessage.value = null
 
-        // 1. Determine which state variable to check/update
+        // 1. Determines which state variable to check/update based on the clicked chip.
         val currentState = when (filterType) {
             "category" -> _selectedCategory
             "area" -> _selectedArea
@@ -143,23 +152,24 @@ class RecipeListViewModel(private val repository: RecipeRepository) : ViewModel(
             else -> return
         }
 
-        // 2. Toggling Logic: If the clicked chip is already selected, clear it (set to null)
+        // 2. Toggling Logic: If the clicked chip is already selected, clear it.
         val newQuery = if (currentState.value == query) null else query
 
-        // 3. Clear ALL filters first for single-selection across all filter groups
+        // 3. Clears ALL filters first to ensure only one filter type is active.
         clearAllFilters()
 
-        // 4. Set the new selection state (null if toggled off, or the new value)
+        // 4. Sets the new selection state.
         currentState.value = newQuery
 
-        // 5. Execute API call only if a new query is active
+        // 5. Executes API call only if a new filter is selected.
         if (newQuery != null) {
             viewModelScope.launch {
 
                 val result = when (filterType) {
                     "category" -> repository.filterByCategory(newQuery)
                     "area" -> repository.filterByArea(newQuery)
-                    "ingredient" -> repository.searchRecipes(newQuery) // Ingredient filter uses full search
+                    // Ingredient filter uses the broad search API endpoint.
+                    "ingredient" -> repository.searchRecipes(newQuery)
                     else -> return@launch
                 }
 
@@ -178,7 +188,7 @@ class RecipeListViewModel(private val repository: RecipeRepository) : ViewModel(
                 _isLoading.value = false
             }
         } else {
-            // If filter is cleared (toggled off), show no results.
+            // If filter is cleared (toggled off), the recipe list is emptied.
             _recipes.value = emptyList()
             _isLoading.value = false
         }
