@@ -27,6 +27,10 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 
 
+/**
+ * HomeScreen is the application's primary landing page (View Layer - M2).
+ * It displays a random recipe and a list of recently viewed items (M6 Features).
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
@@ -34,19 +38,19 @@ fun HomeScreen(
     onRecipeClick: (String) -> Unit,
     onSearchClick: () -> Unit
 ) {
-    // State to hold the result of the random recipe fetch
+    // State stores the result of the API call for the random recipe (M4 Error Handling).
     var randomRecipeState by remember { mutableStateOf<Result<com.csugprojects.recipeapp.domain.model.Recipe>>(Result.Loading) }
 
-    // Collect recently viewed recipes state
+    // Observes the list of recently viewed recipes from the ViewModel (M6 State Management).
     val recentlyViewed by viewModel.recentlyViewed.collectAsState()
 
-    // Collect global favorites state (Source of truth for isFavorite)
+    // Observes the global source of truth for favorite status (M6 State Management).
     val favoriteRecipes by viewModel.favoriteRecipes.collectAsState()
     val favoriteIds = remember(favoriteRecipes) {
         favoriteRecipes.map { it.id }.toSet()
     }
 
-    // Fetch a random recipe immediately when the screen is composed
+    // Triggers the initial fetch for a random recipe when the screen is first composed (M6 Feature).
     LaunchedEffect(Unit) {
         viewModel.fetchRandomRecipe { result ->
             randomRecipeState = result
@@ -60,7 +64,7 @@ fun HomeScreen(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
 
-        // --- Recently Viewed Section (Small Cards) ---
+        // Displays a horizontally scrolling list of recently viewed recipes (M6 Feature).
         if (recentlyViewed.isNotEmpty()) {
             Text(
                 text = "Recently Viewed",
@@ -75,10 +79,11 @@ fun HomeScreen(
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 items(recentlyViewed) { recipe ->
-                    // Correctly derives isFavorite from global state
+                    // Uses SmallRecipeCard component for the condensed view.
                     SmallRecipeCard(
                         recipe = recipe.copy(isFavorite = favoriteIds.contains(recipe.id)),
                         onClick = { onRecipeClick(recipe.id) },
+                        // Calls ViewModel to update the persistent favorite status (M2/M6 Operation).
                         onFavoriteClick = { isFavorite ->
                             if (isFavorite) viewModel.addFavorite(recipe) else viewModel.removeFavorite(recipe.id)
                         }
@@ -94,17 +99,17 @@ fun HomeScreen(
             modifier = Modifier.padding(top = 16.dp, bottom = 16.dp)
         )
 
-        // Display Random Recipe or Loading/Error State
+        // Handles conditional display based on the API fetch state (M4 Error Handling).
         when (val state = randomRecipeState) {
             is Result.Loading -> {
                 CircularProgressIndicator()
             }
             is Result.Success -> {
                 state.data?.let { recipe ->
-                    // FIX: Ensure the isFavorite flag is always derived from the live favoriteIds set
                     val currentIsFavorite = favoriteIds.contains(recipe.id)
+                    // Uses the standard RecipeCard component (M2 Component Description).
                     RecipeCard(
-                        recipe = recipe.copy(isFavorite = currentIsFavorite), // Inject live status
+                        recipe = recipe.copy(isFavorite = currentIsFavorite),
                         onClick = { onRecipeClick(recipe.id) },
                         onFavoriteClick = { isFavorite ->
                             if (isFavorite) viewModel.addFavorite(recipe) else viewModel.removeFavorite(recipe.id)
@@ -119,7 +124,7 @@ fun HomeScreen(
 
         Spacer(modifier = Modifier.height(40.dp))
 
-        // Button to navigate to the full Search Screen
+        // Button navigates to the search screen (M2 Navigation Flow).
         Button(
             onClick = onSearchClick,
             contentPadding = PaddingValues(16.dp),
@@ -131,6 +136,9 @@ fun HomeScreen(
     }
 }
 
+/**
+ * SmallRecipeCard defines a compact, reusable UI card for horizontal lists.
+ */
 @Composable
 fun SmallRecipeCard(
     recipe: Recipe,
@@ -152,6 +160,7 @@ fun SmallRecipeCard(
             ) {
                 AsyncImage(
                     model = recipe.imageUrl,
+                    // Content description aids accessibility (M2 Accessibility).
                     contentDescription = "Image of ${recipe.title}",
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize()
