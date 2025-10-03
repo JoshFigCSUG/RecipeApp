@@ -17,13 +17,19 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import java.io.IOException
 
+/**
+ * RecipeRepositoryImpl is the concrete implementation of the Repository interface (Model Layer - M4 Design).
+ * It acts as the single source of truth, coordinating data from the API and the local database.
+ */
 class RecipeRepositoryImpl(
     private val apiService: RecipeApiService,
     private val recipeDao: RecipeDao
 ) : RecipeRepository {
 
-    // --- Existing Data Operations ---
-
+    /**
+     * Searches for recipes by keyword (M2 Core Feature).
+     * Uses Dispatchers.IO to ensure network operation is off the main thread (M6 Performance).
+     */
     override suspend fun searchRecipes(query: String): Result<List<Recipe>> {
         return withContext(Dispatchers.IO) {
             try {
@@ -32,18 +38,22 @@ class RecipeRepositoryImpl(
                 if (meals.isEmpty()) {
                     Result.Error(Exception("No recipes found for '$query'"))
                 } else {
-                    // Assumes MealDto has a toRecipe() extension function
                     val recipes = meals.map { it.toRecipe() }
                     Result.Success(recipes)
                 }
             } catch (e: IOException) {
+                // Handles network connection issues (M4 Error Handling).
                 Result.Error(Exception("Network error: ${e.message}", e))
             } catch (e: Exception) {
+                // Handles general API or unexpected errors.
                 Result.Error(Exception("Failed to fetch recipes: ${e.message}", e))
             }
         }
     }
 
+    /**
+     * Retrieves full details for a single recipe (M2 Core Feature).
+     */
     override suspend fun getRecipeDetails(id: String): Result<Recipe> {
         return withContext(Dispatchers.IO) {
             try {
@@ -62,26 +72,39 @@ class RecipeRepositoryImpl(
         }
     }
 
+    /**
+     * Retrieves all saved favorite recipes from the local Room database (M4 Persistence).
+     * Returns a Flow for reactive state management (M6 State Management).
+     */
     override fun getFavoriteRecipes(): Flow<List<Recipe>> {
         return recipeDao.getAllFavoriteRecipes().map { entities ->
             entities.map { it.toRecipe().copy(isFavorite = true) }
         }
     }
 
+    /**
+     * Saves a recipe to the local database as a favorite.
+     */
     override suspend fun addFavorite(recipe: Recipe) {
         withContext(Dispatchers.IO) {
             recipeDao.insertRecipe(recipe.toRecipeEntity())
         }
     }
 
+    /**
+     * Removes a recipe from the local favorites database.
+     */
     override suspend fun removeFavorite(recipeId: String) {
         withContext(Dispatchers.IO) {
             recipeDao.deleteRecipeById(recipeId)
         }
     }
 
-    // --- New Search/Filter/List Functions ---
+    // --- New Search/Filter/List Functions (M6 Feature Expansion) ---
 
+    /**
+     * Fetches a single random recipe, used primarily for the Home Screen.
+     */
     override suspend fun getRandomRecipe(): Result<Recipe> {
         return withContext(Dispatchers.IO) {
             try {
@@ -100,6 +123,9 @@ class RecipeRepositoryImpl(
         }
     }
 
+    /**
+     * Fetches the list of all available categories.
+     */
     override suspend fun getCategories(): Result<List<Category>> {
         return withContext(Dispatchers.IO) {
             try {
@@ -114,6 +140,9 @@ class RecipeRepositoryImpl(
         }
     }
 
+    /**
+     * Fetches a list of ingredients for use in filtering.
+     */
     override suspend fun listIngredients(): Result<List<Name>> {
         return withContext(Dispatchers.IO) {
             try {
@@ -130,6 +159,9 @@ class RecipeRepositoryImpl(
         }
     }
 
+    /**
+     * Fetches a list of areas/cuisines for use in filtering.
+     */
     override suspend fun listAreas(): Result<List<Name>> {
         return withContext(Dispatchers.IO) {
             try {
@@ -146,8 +178,10 @@ class RecipeRepositoryImpl(
         }
     }
 
-    // --- Filter Implementations (Common Mapping Logic) ---
-
+    /**
+     * Handles the common logic for filtering API requests, wrapping the result in the Result sealed class.
+     * This function uses the standard error handling designed in M4.
+     */
     private suspend fun filterMeals(call: suspend () -> MealListDto): Result<List<Recipe>> {
         return withContext(Dispatchers.IO) {
             try {
