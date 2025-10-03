@@ -2,7 +2,6 @@ package com.csugprojects.recipeapp.ui.list
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -21,7 +20,6 @@ import coil.compose.AsyncImage
 import com.csugprojects.recipeapp.util.Result
 import androidx.compose.runtime.collectAsState
 import com.csugprojects.recipeapp.ui.viewmodel.GlobalRecipeOperationsViewModel
-import com.csugprojects.recipeapp.ui.list.RecipeCard
 import com.csugprojects.recipeapp.domain.model.Recipe
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -39,7 +37,7 @@ fun HomeScreen(
     onSearchClick: () -> Unit
 ) {
     // State stores the result of the API call for the random recipe (M4 Error Handling).
-    var randomRecipeState by remember { mutableStateOf<Result<com.csugprojects.recipeapp.domain.model.Recipe>>(Result.Loading) }
+    var randomRecipeState by remember { mutableStateOf<Result<Recipe>>(Result.Loading) }
 
     // Observes the list of recently viewed recipes from the ViewModel (M6 State Management).
     val recentlyViewed by viewModel.recentlyViewed.collectAsState()
@@ -105,7 +103,7 @@ fun HomeScreen(
                 CircularProgressIndicator()
             }
             is Result.Success -> {
-                state.data?.let { recipe ->
+                state.data.let { recipe ->
                     val currentIsFavorite = favoriteIds.contains(recipe.id)
                     // Uses the standard RecipeCard component (M2 Component Description).
                     RecipeCard(
@@ -115,7 +113,7 @@ fun HomeScreen(
                             if (isFavorite) viewModel.addFavorite(recipe) else viewModel.removeFavorite(recipe.id)
                         }
                     )
-                } ?: Text("No random recipe found. Try searching!")
+                }
             }
             is Result.Error -> {
                 Text("Error loading recipe: ${state.exception.message}", color = MaterialTheme.colorScheme.error)
