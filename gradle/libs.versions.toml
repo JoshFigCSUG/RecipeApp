@@ -22,6 +22,7 @@ ksp = "2.2.20-2.0.3" # FIXED: Updated KSP version for Kotlin 2.2.20
 ui = "<version>"
 uiTooling = "<version>"
 kotlinxCoroutines = "1.10.2" # New: Coroutines version
+securityCrypto = "1.1.0" # ADDED: For EncryptedSharedPreferences (Security Milestone 6)
 
 [libraries]
 androidx-compose-bom-v20250900 = { module = "androidx.compose:compose-bom", version.ref = "composeBomVersion" }
@@ -54,6 +55,7 @@ retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
 ui = { module = "androidx.compose.ui:ui", version.ref = "ui" }
 androidx-compose-material-icons-core = { module = "androidx.compose.material:material-icons-core" }
+androidx-security-crypto = { group = "androidx.security", name = "security-crypto", version.ref = "securityCrypto" } # ADDED: Security library
 
 # Coroutines dependencies
 kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }

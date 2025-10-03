@@ -19,6 +19,7 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -28,13 +29,18 @@ android {
             )
         }
     }
+
+    // FIX: Correct syntax for compileOptions closure
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+
+    // FIX: Correct syntax for kotlinOptions closure (jvmTarget is accepted inside this block)
     kotlinOptions {
         jvmTarget = "11"
     }
+
     buildFeatures {
         compose = true
     }
@@ -51,6 +57,9 @@ dependencies {
     // Coroutines (As requested)
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.android)
+
+    // ADDED FOR MILESTONE 6: Security (EncryptedSharedPreferences)
+    implementation(libs.androidx.security.crypto)
 
     // Compose BOM & Core UI
     implementation(platform(libs.androidx.compose.bom))
