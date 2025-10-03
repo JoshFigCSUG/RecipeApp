@@ -2,15 +2,20 @@ package com.csugprojects.recipeapp.data.model
 
 import com.google.gson.annotations.SerializedName
 
-// This DTO handles lists from the list.php endpoint (e.g., list all ingredients, areas)
+/**
+ * NameListDto and NameDto define the Data Transfer Objects (DTOs) for listing categories, areas, or ingredients (Model Layer - M4 Design).
+ * This structure is used because the TheMealDB API reuses the "meals" key for these lists (M6 Implementation).
+ */
 data class NameListDto(
-    @SerializedName("meals") // The API confusingly uses 'meals' for these lists
+    // The API uses the confusing key "meals" for these lists, requiring explicit mapping.
+    @SerializedName("meals")
     val names: List<NameDto>?
 )
 
 data class NameDto(
-    @SerializedName("strIngredient") // Field for ingredient name
+    // This DTO must hold either an ingredient string or an area string, as required by the API.
+    @SerializedName("strIngredient")
     val strIngredient: String?,
-    @SerializedName("strArea") // Field for area name
+    @SerializedName("strArea")
     val strArea: String?
 )
