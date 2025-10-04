@@ -124,7 +124,7 @@ class RecipeListViewModel(private val repository: RecipeRepository) : ViewModel(
                     _recipes.value = emptyList()
                     _errorMessage.value = finalResult.exception.message
                 }
-                is Result.Loading -> { /* Should not happen here */ }
+                is Result.Loading -> {}
             }
 
             _isLoading.value = false
@@ -183,7 +183,7 @@ class RecipeListViewModel(private val repository: RecipeRepository) : ViewModel(
                         _recipes.value = emptyList()
                         _errorMessage.value = result.exception.message
                     }
-                    is Result.Loading -> { /* Handled by _isLoading */ }
+                    is Result.Loading -> {}
                 }
                 _isLoading.value = false
             }
