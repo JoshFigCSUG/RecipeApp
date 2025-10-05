@@ -26,8 +26,7 @@ import androidx.compose.ui.text.font.FontWeight
 
 
 /**
- * HomeScreen is the application's primary landing page (View Layer - M2).
- * It displays a random recipe and a list of recently viewed items (M6 Features).
+ * The HomeScreen is the application's primary landing page (View Layer - M2).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,10 +35,10 @@ fun HomeScreen(
     onRecipeClick: (String) -> Unit,
     onSearchClick: () -> Unit
 ) {
-    // State stores the result of the API call for the random recipe (M4 Error Handling).
+    // Manages the state for the random recipe, wrapped in Result for error handling (M4 Error Handling).
     var randomRecipeState by remember { mutableStateOf<Result<Recipe>>(Result.Loading) }
 
-    // Observes the list of recently viewed recipes from the ViewModel (M6 State Management).
+    // Observes the user's recently viewed recipes list (M6 State Management/Feature).
     val recentlyViewed by viewModel.recentlyViewed.collectAsState()
 
     // Observes the global source of truth for favorite status (M6 State Management).
@@ -48,7 +47,7 @@ fun HomeScreen(
         favoriteRecipes.map { it.id }.toSet()
     }
 
-    // Triggers the initial fetch for a random recipe when the screen is first composed (M6 Feature).
+    // Triggers the network call for a random recipe when the screen is first displayed (M6 Feature).
     LaunchedEffect(Unit) {
         viewModel.fetchRandomRecipe { result ->
             randomRecipeState = result
@@ -62,7 +61,7 @@ fun HomeScreen(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
 
-        // Displays a horizontally scrolling list of recently viewed recipes (M6 Feature).
+        // Displays a horizontally scrolling list of recently viewed recipes.
         if (recentlyViewed.isNotEmpty()) {
             Text(
                 text = "Recently Viewed",
@@ -71,13 +70,15 @@ fun HomeScreen(
                     .fillMaxWidth()
                     .padding(top = 16.dp, bottom = 8.dp)
             )
+            // Adds a divider for visual separation (M6 UX Enhancement).
+            HorizontalDivider(modifier = Modifier.padding(bottom = 12.dp))
 
             LazyRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 items(recentlyViewed) { recipe ->
-                    // Uses SmallRecipeCard component for the condensed view.
+                    // Uses SmallRecipeCard for the condensed horizontal view.
                     SmallRecipeCard(
                         recipe = recipe.copy(isFavorite = favoriteIds.contains(recipe.id)),
                         onClick = { onRecipeClick(recipe.id) },
@@ -91,46 +92,63 @@ fun HomeScreen(
             Spacer(modifier = Modifier.height(24.dp))
         }
 
-        Text(
-            text = "Recipe of the Moment",
-            style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.padding(top = 16.dp, bottom = 16.dp)
-        )
+        // Wraps the main section in an elevated Card for visual focus (M6 UX Enhancement).
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 16.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "Recipe of the Moment",
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
 
-        // Handles conditional display based on the API fetch state (M4 Error Handling).
-        when (val state = randomRecipeState) {
-            is Result.Loading -> {
-                CircularProgressIndicator()
-            }
-            is Result.Success -> {
-                // Accesses data directly, as Result.Success guarantees its presence.
-                state.data.let { recipe ->
-                    val currentIsFavorite = favoriteIds.contains(recipe.id)
-                    // Uses the standard RecipeCard component (M2 Component Description).
-                    RecipeCard(
-                        recipe = recipe.copy(isFavorite = currentIsFavorite),
-                        onClick = { onRecipeClick(recipe.id) },
-                        onFavoriteClick = { isFavorite ->
-                            if (isFavorite) viewModel.addFavorite(recipe) else viewModel.removeFavorite(recipe.id)
+                // Handles conditional display based on the API fetch state (M4 Error Handling).
+                when (val state = randomRecipeState) {
+                    is Result.Loading -> {
+                        CircularProgressIndicator(modifier = Modifier.padding(32.dp))
+                    }
+                    is Result.Success -> {
+                        // Renders the full RecipeCard with the fetched data.
+                        state.data.let { recipe ->
+                            val currentIsFavorite = favoriteIds.contains(recipe.id)
+                            RecipeCard(
+                                recipe = recipe.copy(isFavorite = currentIsFavorite),
+                                onClick = { onRecipeClick(recipe.id) },
+                                onFavoriteClick = { isFavorite ->
+                                    if (isFavorite) viewModel.addFavorite(recipe) else viewModel.removeFavorite(recipe.id)
+                                }
+                            )
                         }
-                    )
+                    }
+                    is Result.Error -> {
+                        Text("Error loading recipe: ${state.exception.message}", color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(24.dp))
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                // Uses an OutlinedButton for a clear call to action to start a search (M2 Navigation Flow).
+                OutlinedButton(
+                    onClick = onSearchClick,
+                    modifier = Modifier.fillMaxWidth(0.85f),
+                    contentPadding = PaddingValues(16.dp),
+                    border = ButtonDefaults.outlinedButtonBorder.copy(width = 2.dp),
+                ) {
+                    Icon(Icons.Default.Search, contentDescription = null, modifier = Modifier.size(24.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Start Full Search & Filters", style = MaterialTheme.typography.titleMedium)
                 }
             }
-            is Result.Error -> {
-                Text("Error loading recipe: ${state.exception.message}", color = MaterialTheme.colorScheme.error)
-            }
-        }
-
-        Spacer(modifier = Modifier.height(40.dp))
-
-        // Button navigates to the search screen (M2 Navigation Flow).
-        Button(
-            onClick = onSearchClick,
-            contentPadding = PaddingValues(16.dp),
-        ) {
-            Icon(Icons.Default.Search, contentDescription = null, modifier = Modifier.size(24.dp))
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("Start Full Search & Filters")
         }
     }
 }
@@ -181,6 +199,7 @@ fun SmallRecipeCard(
             }
             Text(
                 text = recipe.title,
+                // Applies the cursive font style for branding (M2 UI/UX).
                 style = MaterialTheme.typography.titleSmall.copy(
                     fontFamily = FontFamily.Cursive,
                     fontWeight = FontWeight.Bold

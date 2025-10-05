@@ -11,6 +11,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.csugprojects.recipeapp.ui.viewmodel.GlobalRecipeOperationsViewModel
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.ui.text.style.TextAlign
 
 
 /**
@@ -29,12 +32,14 @@ fun FavoriteRecipeScreen(
     Column(
         modifier = Modifier.fillMaxSize()
     ) {
-        // Simple title display, relying on MainActivity for Scaffold structure.
+        // Prominent header using custom typography.
         Text(
             text = "Your Favorites",
             style = MaterialTheme.typography.headlineMedium,
             modifier = Modifier.padding(top = 16.dp, start = 16.dp)
         )
+        // Adds a visual separation line under the title (M6 UX Enhancement).
+        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp), thickness = 1.dp)
 
         // Conditional rendering: shows a message if no recipes are saved.
         if (favoriteRecipes.isEmpty()) {
@@ -44,7 +49,22 @@ fun FavoriteRecipeScreen(
                     .weight(1f),
                 contentAlignment = Alignment.Center
             ) {
-                Text("You haven't saved any recipes yet.")
+                // Engaging empty state with an icon and styled text (M6 UX Enhancement).
+                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(32.dp)) {
+                    Icon(
+                        imageVector = Icons.Default.FavoriteBorder,
+                        contentDescription = "No Favorites",
+                        modifier = Modifier.size(64.dp).padding(bottom = 8.dp),
+                        // Uses the Tertiary color for a soft, themed accent on the empty state.
+                        tint = MaterialTheme.colorScheme.tertiary
+                    )
+                    Text(
+                        "You haven't saved any recipes yet. Tap the heart icon on any recipe to add it here!",
+                        style = MaterialTheme.typography.titleMedium,
+                        textAlign = TextAlign.Center,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
         } else {
             // LazyColumn efficiently renders the scrollable list of recipe cards.

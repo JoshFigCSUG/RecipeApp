@@ -1,5 +1,6 @@
 package com.csugprojects.recipeapp.ui.list
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -10,6 +11,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -20,7 +23,6 @@ import androidx.compose.ui.text.font.FontWeight
 
 /**
  * RecipeCard is the custom, reusable component for displaying a single recipe summary (View Layer - M2 Component).
- * It is used by the list and home screens to display scrollable content.
  */
 @Composable
 fun RecipeCard(
@@ -31,9 +33,11 @@ fun RecipeCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
+            // Enables the entire card to be clicked to view details (M2 Navigation Flow).
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(12.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        // Increased elevation for a prominent card style (M6 UX Enhancement).
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
     ) {
         Column {
             Box(
@@ -41,31 +45,58 @@ fun RecipeCard(
                     .fillMaxWidth()
                     .height(200.dp)
             ) {
-                // AsyncImage uses the Coil library to load images from the network (M4 Implementation).
+                // Loads the recipe image from the network using the Coil library (M4 Implementation).
                 AsyncImage(
                     model = recipe.imageUrl,
+                    // Content description is crucial for accessibility (M2 Accessibility).
                     contentDescription = "Image of ${recipe.title}",
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize()
                 )
-                // IconButton manages the favorite status logic (M2 Feature).
+
+                // Adds a subtle gradient scrim over the bottom of the image for better contrast (M6 UX Enhancement).
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(80.dp)
+                        .align(Alignment.BottomCenter)
+                        .background(
+                            brush = Brush.verticalGradient(
+                                colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.5f)),
+                                startY = 0f,
+                                endY = 200f
+                            )
+                        )
+                )
+
+                // The button controls the favorite status (M2 Feature).
                 IconButton(
                     onClick = { onFavoriteClick(!recipe.isFavorite) },
+                    // Adds a translucent background to the button for visual clarity (M6 UX Enhancement).
                     modifier = Modifier
                         .align(Alignment.TopEnd)
                         .padding(8.dp)
+                        .background(
+                            Color.Black.copy(alpha = 0.3f),
+                            shape = MaterialTheme.shapes.extraLarge
+                        )
                 ) {
-                    // Icon image changes based on the recipe's current favorite status (M6 State Management).
+                    // Icon changes based on the recipe's state (M6 State Management).
                     Icon(
                         imageVector = if (recipe.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                        // Content description ensures accessibility (M2 Accessibility).
                         contentDescription = "Favorite",
+                        // Uses the theme's primary color for the filled icon for thematic consistency (Maintenance Plan).
                         tint = if (recipe.isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onPrimary
                     )
                 }
             }
+
+            // A divider visually separates the image from the title area (M6 UX Enhancement).
+            HorizontalDivider(thickness = 1.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+
             Text(
                 text = recipe.title,
+                // Cursive font for unique branding (M2 UI/UX).
                 style = MaterialTheme.typography.titleLarge.copy(
                     fontFamily = FontFamily.Cursive,
                     fontWeight = FontWeight.Bold),

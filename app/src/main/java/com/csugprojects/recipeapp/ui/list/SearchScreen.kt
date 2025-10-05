@@ -18,8 +18,6 @@ import androidx.compose.runtime.collectAsState
 import com.csugprojects.recipeapp.ui.viewmodel.GlobalRecipeOperationsViewModel
 import com.csugprojects.recipeapp.ui.viewmodel.RecipeListViewModel
 import com.csugprojects.recipeapp.domain.model.Name
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 
 
 /**
@@ -56,6 +54,7 @@ fun RecipeListScreen(
 
     var active by rememberSaveable { mutableStateOf(false) }
 
+    // Outer column holds the fixed SearchBar and the scrollable content.
     Column(modifier = Modifier.fillMaxSize()) {
         // SearchBar component handles user input (M2 Component).
         SearchBar(
@@ -82,83 +81,109 @@ fun RecipeListScreen(
             )
         }
 
-        // Column scrolls to allow space for all filter bars.
-        Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-
-            // Horizontal Filter Bars for navigation/filtering (M6 Feature).
-            Text("Categories", style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(start = 16.dp, top = 8.dp))
-            CategoryFilterBar(
-                categoriesState = categoriesState,
-                selectedFilter = selectedCategory,
-                favoriteIds = favoriteIds,
-                listViewModel = listViewModel
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Text("Areas", style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(start = 16.dp))
-            AreaFilterBar(
-                areasState = areasState,
-                selectedFilter = selectedArea,
-                favoriteIds = favoriteIds,
-                listViewModel = listViewModel
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Text("Common Ingredients", style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(start = 16.dp))
-            IngredientFilterBar(
-                selectedFilter = selectedIngredient,
-                favoriteIds = favoriteIds,
-                listViewModel = listViewModel
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-        }
-
-
         // Main Content display area for search results.
-        if (isLoading) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
+        when {
+            // Shows loading indicator while data is fetched.
+            isLoading -> {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
             }
-        } else if (errorMessage != null) {
-            // Displays error messages received from the Repository/ViewModel (M4 Error Handling).
-            Text(
-                text = errorMessage!!,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                color = MaterialTheme.colorScheme.error
-            )
-        } else {
-            // LazyColumn displays the search and filter results.
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                items(
-                    items = recipes,
-                    key = { it.id }
-                ) { recipe ->
-                    val currentIsFavorite = favoriteIds.contains(recipe.id)
-                    // Uses the reusable RecipeCard component (M2 Component).
-                    RecipeCard(
-                        recipe = recipe.copy(isFavorite = currentIsFavorite),
-                        onClick = { onRecipeClick(recipe.id) },
-                        // Calls the Global ViewModel to modify persistent favorite status (M2/M6 Operation).
-                        onFavoriteClick = { isFavorite ->
-                            if (isFavorite) {
-                                globalViewModel.addFavorite(recipe)
-                            } else {
-                                globalViewModel.removeFavorite(recipe.id)
+            // Displays error message if data fetch fails (M4 Error Handling).
+            errorMessage != null -> {
+                Text(
+                    text = errorMessage!!,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
+            else -> {
+                // LazyColumn displays both the filters (as items) and the search results, enabling the scroll-away feature (M6 UX Enhancement).
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    // --- FILTERS SECTION ---
+
+                    // Filter Section Header.
+                    item {
+                        Text(
+                            "Filters & Browse",
+                            style = MaterialTheme.typography.headlineSmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                    }
+
+                    // Filter Bar: Categories.
+                    item {
+                        Text("Categories", style = MaterialTheme.typography.labelMedium)
+                        CategoryFilterBar(
+                            categoriesState = categoriesState,
+                            selectedFilter = selectedCategory,
+                            favoriteIds = favoriteIds,
+                            listViewModel = listViewModel
+                        )
+                    }
+
+                    // Filter Bar: Areas/Cuisines.
+                    item {
+                        Text("Cuisines (Areas)", style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(top = 8.dp))
+                        AreaFilterBar(
+                            areasState = areasState,
+                            selectedFilter = selectedArea,
+                            favoriteIds = favoriteIds,
+                            listViewModel = listViewModel
+                        )
+                    }
+
+                    // Filter Bar: Ingredients.
+                    item {
+                        Text("Common Ingredients", style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(top = 8.dp))
+                        IngredientFilterBar(
+                            selectedFilter = selectedIngredient,
+                            favoriteIds = favoriteIds,
+                            listViewModel = listViewModel
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
+                    }
+
+                    // --- RECIPE RESULTS ---
+                    item {
+                        Text(
+                            "Results",
+                            style = MaterialTheme.typography.titleLarge,
+                            modifier = Modifier.padding(top = 8.dp)
+                        )
+                    }
+
+                    // Dynamically renders the list of recipe results.
+                    items(
+                        items = recipes,
+                        key = { it.id }
+                    ) { recipe ->
+                        val currentIsFavorite = favoriteIds.contains(recipe.id)
+                        // Uses the reusable RecipeCard component (M2 Component).
+                        RecipeCard(
+                            recipe = recipe.copy(isFavorite = currentIsFavorite),
+                            onClick = { onRecipeClick(recipe.id) },
+                            // Calls the Global ViewModel to modify persistent favorite status (M2/M6 Operation).
+                            onFavoriteClick = { isFavorite ->
+                                if (isFavorite) {
+                                    globalViewModel.addFavorite(recipe)
+                                } else {
+                                    globalViewModel.removeFavorite(recipe.id)
+                                }
                             }
-                        }
-                    )
+                        )
+                    }
                 }
             }
         }
@@ -175,21 +200,20 @@ fun CategoryFilterBar(
     favoriteIds: Set<String>,
     listViewModel: RecipeListViewModel
 ) {
-    // Displays based on the state of the categories fetch (Loading, Success, or Error).
+    // Renders the list based on the API fetch state.
     when (categoriesState) {
         is Result.Loading -> {
             CircularProgressIndicator(
                 modifier = Modifier
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .padding(vertical = 8.dp)
                     .size(24.dp),
                 strokeWidth = 2.dp
             )
         }
         is Result.Success -> {
             LazyRow(
-                contentPadding = PaddingValues(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
             ) {
                 // Creates a clickable FilterChip for each category.
                 items(categoriesState.data.take(10), key = { it.id }) { category ->
@@ -207,7 +231,7 @@ fun CategoryFilterBar(
             Text(
                 "Could not load categories.",
                 style = MaterialTheme.typography.labelSmall,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                modifier = Modifier.padding(vertical = 8.dp)
             )
         }
     }
@@ -224,16 +248,15 @@ fun AreaFilterBar(
         is Result.Loading -> {
             CircularProgressIndicator(
                 modifier = Modifier
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .padding(vertical = 8.dp)
                     .size(24.dp),
                 strokeWidth = 2.dp
             )
         }
         is Result.Success -> {
             LazyRow(
-                contentPadding = PaddingValues(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
             ) {
                 // Creates a clickable FilterChip for each area.
                 items(areasState.data.take(10), key = { it.name }) { area ->
@@ -251,7 +274,7 @@ fun AreaFilterBar(
             Text(
                 "Could not load areas.",
                 style = MaterialTheme.typography.labelSmall,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                modifier = Modifier.padding(vertical = 8.dp)
             )
         }
     }
@@ -267,9 +290,8 @@ fun IngredientFilterBar(
     val commonIngredients = listOf("Chicken", "Beef", "Salmon", "Cheese", "Pasta")
 
     LazyRow(
-        contentPadding = PaddingValues(horizontal = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
     ) {
         items(commonIngredients) { ingredient ->
             FilterChip(
