@@ -4,6 +4,7 @@ import androidx.activity.ComponentActivity
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -153,8 +154,8 @@ class RecipeScreenE2ETest {
     // --- Utility Function to help match Icons ---
     private fun hasIcon(imageVector: androidx.compose.ui.graphics.vector.ImageVector): SemanticsMatcher {
         return SemanticsMatcher("Icon with ImageVector $imageVector") { node ->
-            // This is a common method for matching an Icon based on its presence in the Semantics node.
-            val iconTag = node.config.getOrNull(androidx.compose.ui.semantics.SemanticsProperties.ContentDescription)
+            // Checks for the existence of the ContentDescription property, confirming the Icon composable is present.
+            val iconTag = node.config.getOrNull(SemanticsProperties.ContentDescription)
             iconTag != null
         }
     }
