@@ -1,79 +1,144 @@
 [versions]
+# Android Gradle Plugin, essential for building the final app package (Deployment Preparation).
 agp = "8.13.0"
+# Version for the Coil image loading library (M6 Performance, Memory Management).
 coilCompose = "2.7.0"
+# Defines the main version set for all Compose UI libraries (M2/M6 UI Layer).
 composeBomVersion = "2025.09.01"
+# JSON converter used by Retrofit for API data (M4 Network Architecture).
 converterGson = "3.0.0"
+# Utilities for testing Android Architecture Components (Testing Strategy).
 coreTesting = "2.2.0"
+# Library for handling JSON serialization.
 gson = "2.13.2"
+# The core Kotlin language version (Maintenance Plan).
 kotlin = "2.2.20"
+# Kotlin extensions for core Android functionality.
 coreKtx = "1.17.0"
+# Standard JUnit library version (Testing Strategy).
 junit = "4.13.2"
+# AndroidX JUnit version for instrumented tests (Testing Strategy).
 junitVersion = "1.3.0"
+# Library for simulating user actions in UI tests (Testing Strategy).
 espressoCore = "3.7.0"
+# Utilities for testing Kotlin Coroutines and suspend functions (Testing Strategy/M6 Performance).
 kotlinxCoroutinesTest = "1.10.2"
+# Handles lifecycle awareness for data streams.
 lifecycleRuntimeKtx = "2.9.4"
+# Compose-specific lifecycle support for observing data Flows (M6 State Management).
 lifecycleRuntimeCompose = "2.9.4"
+# Compose integration with the main Android Activity.
 activityCompose = "1.11.0"
+# Central definition for the Compose Bill of Materials.
 composeBom = "2025.09.01"
+# Base material design library version.
 material = "<version>"
+# Mocking framework for isolating dependencies during testing (Testing Strategy).
 mockk = "1.14.6"
+# Jetpack Compose Navigation library version (M2 Navigation Flow).
 navigationCompose = "2.9.5"
+# Core networking library for API access (M4 Network Architecture).
 retrofit = "3.0.0"
+# Room Database version for local persistence (M4 Persistence).
 roomRuntime = "2.8.1"
 room = "2.8.1"
-ksp = "2.2.20-2.0.3" # FIXED: Updated KSP version for Kotlin 2.2.20
+# Kotlin Symbol Processing version for Room Database code generation.
+ksp = "2.2.20-2.0.3"
+# Artifacts for testing Room databases (Testing Strategy).
 roomTesting = "2.8.1"
+# Core Compose UI library version placeholder.
 ui = "<version>"
+# Compose UI tooling version placeholder.
 uiTooling = "<version>"
-kotlinxCoroutines = "1.10.2" # New: Coroutines version
-securityCrypto = "1.1.0" # ADDED: For EncryptedSharedPreferences (Security Milestone 6)
+# Coroutines library version for background processing (M6 Performance).
+kotlinxCoroutines = "1.10.2"
+# Library for secure local storage, used for EncryptedSharedPreferences (M6 Security).
+securityCrypto = "1.1.0"
 
 [libraries]
+# Defines the set of core Compose dependencies.
 androidx-compose-bom-v20250900 = { module = "androidx.compose:compose-bom", version.ref = "composeBomVersion" }
+# Compose Material components.
 androidx-compose-material = { module = "androidx.compose.material:material", version.ref = "material" }
+# Kotlin extensions for core Android functionality.
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+# Testing utilities for architecture components.
 androidx-core-testing = { module = "androidx.arch.core:core-testing", version.ref = "coreTesting" }
+# Compose Material 3 components (M2 UI/UX).
 androidx-material3 = { module = "androidx.compose.material3:material3" }
+# Compose Navigation component.
 androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigationCompose" }
+# Room extensions for Kotlin coroutines (M4 Persistence/Performance).
 androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "roomRuntime" }
+# Room Database runtime library.
 androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "roomRuntime" }
+# Room testing utilities for local database verification (Testing Strategy).
 androidx-room-testing = { module = "androidx.room:room-testing", version.ref = "roomTesting" }
+# Core Compose UI components.
 androidx-ui = { module = "androidx.compose.ui:ui" }
+# Compose UI tooling for previews.
 androidx-ui-tooling = { module = "androidx.compose.ui:ui-tooling", version.ref = "uiTooling" }
+# Image loading library for recipes (M6 Performance).
 coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coilCompose" }
+# Retrofit converter for Gson JSON processing.
 converter-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "converterGson" }
+# Gson library for JSON serialization.
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
+# Standard JUnit testing library.
 junit = { group = "junit", name = "junit", version.ref = "junit" }
+# AndroidX JUnit library for instrumentation testing.
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
+# UI interaction library for instrumentation tests (Testing Strategy).
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
+# Lifecycle extensions with Coroutines.
 androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
+# Compose-specific lifecycle support for observing data streams (M6 State Management).
 androidx-lifecycle-runtime-compose = { group = "androidx.lifecycle", name = "lifecycle-runtime-compose", version.ref = "lifecycleRuntimeCompose" }
+# Compose integration with Android Activity.
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
+# Compose Bill of Materials for version consistency.
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
+# Compose UI and Graphics components.
 androidx-compose-ui = { group = "androidx.compose.ui", name = "ui" }
 androidx-compose-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics" }
+# Compose UI tooling components.
 androidx-compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
+# Preview tooling for visual development.
 androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
+# Test manifest for debug builds (Testing Strategy).
 androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
+# Compose testing rules for UI tests (Testing Strategy).
 androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
+# Compose Material 3 components.
 androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3" }
+# Coroutines testing library (Testing Strategy/M6 Performance).
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinxCoroutinesTest" }
+# Mocking framework for isolating dependencies in tests (Testing Strategy).
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
+# Core Retrofit library for API calls (M4 Network Architecture).
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
+# Room compiler for generating database code (M4 Persistence).
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
+# Core Compose UI library.
 ui = { module = "androidx.compose.ui:ui", version.ref = "ui" }
+# Material icons for components like the Favorite button (M2 Component).
 androidx-compose-material-icons-core = { module = "androidx.compose.material:material-icons-core" }
-androidx-security-crypto = { group = "androidx.security", name = "security-crypto", version.ref = "securityCrypto" } # ADDED: Security library
+# Library for secure local storage, EncryptedSharedPreferences (M6 Security).
+androidx-security-crypto = { group = "androidx.security", name = "security-crypto", version.ref = "securityCrypto" }
 
-# Coroutines dependencies
+# Coroutines for background processing (M6 Performance).
 kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
 kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "kotlinxCoroutines" }
 
-# Compose Runtime dependency
+# Compose Runtime dependency for core functions.
 androidx-compose-runtime = { group = "androidx.compose.runtime", name = "runtime" }
 
 [plugins]
+# Plugin for Android application building (Deployment Preparation).
 android-application = { id = "com.android.application", version.ref = "agp" }
+# Plugin for Kotlin on Android (Maintenance Plan).
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+# Plugin for Jetpack Compose compilation.
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+# Plugin for Kotlin Symbol Processing (KSP) code generation.
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
