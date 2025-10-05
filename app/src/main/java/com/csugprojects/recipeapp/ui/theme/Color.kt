@@ -23,13 +23,13 @@ val LightBackground = BroncosWhite
 // Surface: Subtle off-white for cards/surfaces
 val LightSurface = Color(0xFFFCFCFC)
 
-// --- Default Dark Theme Colors (Based on Broncos Palette) ---
-// Primary: The dark navy blue
-val DarkPrimary = BroncosBlueDark
-// Secondary: A medium orange for accents
-val DarkSecondary = Color(0xFFE48D67)
-// Tertiary: A lighter blue/silver for contrast
-val DarkTertiary = BroncosSilver
+// --- Default Dark Theme Colors (Lighter versions of Light Theme colors) ---
+// Primary: Lighter version of Broncos Orange (increased brightness)
+val DarkPrimary = Color(0xFFFC7A4E)
+// Secondary: Lighter version of the brown/gray secondary
+val DarkSecondary = Color(0xFF9D8370)
+// Tertiary: Lighter version of the brown tertiary
+val DarkTertiary = Color(0xFFB39885)
 // Background: Deep dark background
 val DarkBackground = Color(0xFF1C1B1F)
 // Surface: Slightly lighter dark gray for cards
