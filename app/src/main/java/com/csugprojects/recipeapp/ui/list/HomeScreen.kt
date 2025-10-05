@@ -23,6 +23,8 @@ import com.csugprojects.recipeapp.ui.viewmodel.GlobalRecipeOperationsViewModel
 import com.csugprojects.recipeapp.domain.model.Recipe
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 
 
 /**
@@ -54,9 +56,13 @@ fun HomeScreen(
         }
     }
 
+    val scrollState = rememberScrollState()
+
     Column(
         modifier = Modifier
             .fillMaxSize()
+            // Makes the entire screen scrollable (M8 Device Compatibility/UX).
+            .verticalScroll(scrollState)
             .padding(horizontal = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -150,6 +156,8 @@ fun HomeScreen(
                 }
             }
         }
+        // Add padding below the card for scroll aesthetics.
+        Spacer(modifier = Modifier.height(32.dp))
     }
 }
 
