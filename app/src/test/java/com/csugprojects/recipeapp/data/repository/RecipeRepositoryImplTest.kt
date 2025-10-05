@@ -42,7 +42,8 @@ class RecipeRepositoryImplTest {
 
     // --- Mock Data Structures (simulating API response and desired output) ---
 
-    // A sample DTO object simulating a successful API response
+    // A sample DTO object simulating a successful API response.
+    // All 40 ingredient/measure parameters must be explicitly defined (M4 DTO structure).
     private val mockMealDto = MealDto(
         idMeal = "100",
         strMeal = "Test Recipe",
@@ -55,7 +56,7 @@ class RecipeRepositoryImplTest {
         strIngredient2 = null,
         strMeasure2 = null,
 
-        // **FIX**: Explicitly define all remaining 36 parameters as null
+        // Explicitly defining remaining 36 parameters
         strIngredient3 = null, strMeasure3 = null,
         strIngredient4 = null, strMeasure4 = null,
         strIngredient5 = null, strMeasure5 = null,
@@ -100,11 +101,11 @@ class RecipeRepositoryImplTest {
     }
 
     // -----------------------------------------------------------------
-    // --- 1. SEARCH RECIPES TESTS ---
+    // --- 1. SEARCH RECIPES TESTS (Underscore Convention) ---
     // -----------------------------------------------------------------
 
     @Test
-    fun `searchRecipes returns Success with mapped data on API success`() = runTest(testDispatcher) {
+    fun searchRecipes_returns_Success_with_mapped_data_on_API_success() = runTest(testDispatcher) {
         // GIVEN: Mock API returns a list of meals
         val mockMealListDto = MealListDto(meals = listOf(mockMealDto))
         coEvery { mockApiService.searchMeals(any()) } returns mockMealListDto
@@ -119,7 +120,7 @@ class RecipeRepositoryImplTest {
     }
 
     @Test
-    fun `searchRecipes returns Error when API returns no meals`() = runTest(testDispatcher) {
+    fun searchRecipes_returns_Error_when_API_returns_no_meals() = runTest(testDispatcher) {
         // GIVEN: Mock API returns a list wrapper with a null/empty meal list
         coEvery { mockApiService.searchMeals(any()) } returns MealListDto(meals = emptyList())
 
@@ -133,7 +134,7 @@ class RecipeRepositoryImplTest {
     }
 
     @Test
-    fun `searchRecipes returns Error on IOException (Network Error)`() = runTest(testDispatcher) {
+    fun searchRecipes_returns_Error_on_IOException_Network_Error() = runTest(testDispatcher) {
         // GIVEN: Mock API throws an IOException (simulating no internet/timeout)
         coEvery { mockApiService.searchMeals(any()) } throws IOException("Network failed")
 
@@ -147,11 +148,11 @@ class RecipeRepositoryImplTest {
     }
 
     // -----------------------------------------------------------------
-    // --- 2. GET RECIPE DETAILS TESTS ---
+    // --- 2. GET RECIPE DETAILS TESTS (Underscore Convention) ---
     // -----------------------------------------------------------------
 
     @Test
-    fun `getRecipeDetails returns Success with single mapped recipe`() = runTest(testDispatcher) {
+    fun getRecipeDetails_returns_Success_with_single_mapped_recipe() = runTest(testDispatcher) {
         // GIVEN: Mock API returns a single meal in a list wrapper
         coEvery { mockApiService.getMealDetails(any()) } returns MealListDto(meals = listOf(mockMealDto))
 
@@ -164,7 +165,7 @@ class RecipeRepositoryImplTest {
     }
 
     @Test
-    fun `getRecipeDetails returns Error when recipe ID is not found`() = runTest(testDispatcher) {
+    fun getRecipeDetails_returns_Error_when_recipe_ID_is_not_found() = runTest(testDispatcher) {
         // GIVEN: Mock API returns a null/empty list, even on a lookup
         coEvery { mockApiService.getMealDetails(any()) } returns MealListDto(meals = null)
 
@@ -178,11 +179,11 @@ class RecipeRepositoryImplTest {
     }
 
     // -----------------------------------------------------------------
-    // --- 3. FAVORITES (DATABASE) TESTS ---
+    // --- 3. FAVORITES (DATABASE) TESTS (Underscore Convention) ---
     // -----------------------------------------------------------------
 
     @Test
-    fun `addFavorite calls DAO insert with correct entity`() = runTest(testDispatcher) {
+    fun addFavorite_calls_DAO_insert_with_correct_entity() = runTest(testDispatcher) {
         // GIVEN: Mock DAO is ready
         // WHEN: Calling addFavorite with the domain model
         repository.addFavorite(expectedRecipeDomain)
@@ -193,7 +194,7 @@ class RecipeRepositoryImplTest {
     }
 
     @Test
-    fun `removeFavorite calls DAO deleteById`() = runTest(testDispatcher) {
+    fun removeFavorite_calls_DAO_deleteById() = runTest(testDispatcher) {
         // GIVEN: Mock DAO is ready
         // WHEN: Calling removeFavorite
         repository.removeFavorite("100")
@@ -204,7 +205,7 @@ class RecipeRepositoryImplTest {
     }
 
     @Test
-    fun `getFavoriteRecipes emits Flow of mapped domain models`() = runTest(testDispatcher) {
+    fun getFavoriteRecipes_emits_Flow_of_mapped_domain_models() = runTest(testDispatcher) {
         // GIVEN: Mock DAO returns a Flow emitting a list of entities
         val entities = listOf(expectedRecipeEntity)
         coEvery { mockRecipeDao.getAllFavoriteRecipes() } returns flowOf(entities)

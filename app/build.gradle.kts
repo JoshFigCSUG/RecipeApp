@@ -103,6 +103,13 @@ dependencies {
 
     // Mocking Framework for Unit Tests
     testImplementation(libs.mockk)
-    // Coroutines Test Utilities (using version 1.10.2 from libs.versions.toml)
+    // Coroutines testing library (for testing Flow/suspend functions)
     testImplementation(libs.kotlinx.coroutines.test)
+    // Core testing utilities (often needed for LiveData/Architecture components)
+    testImplementation(libs.androidx.core.testing)
+    // Room testing artifacts (required for creating in-memory databases)
+    androidTestImplementation(libs.androidx.room.testing)
+    androidTestImplementation(libs.androidx.core.testing)
+    // Mocking Framework for Unit Tests
+    androidTestImplementation(libs.mockk)
 }
