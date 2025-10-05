@@ -100,4 +100,9 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
+
+    // Mocking Framework for Unit Tests
+    testImplementation(libs.mockk)
+    // Coroutines Test Utilities (using version 1.10.2 from libs.versions.toml)
+    testImplementation(libs.kotlinx.coroutines.test)
 }
