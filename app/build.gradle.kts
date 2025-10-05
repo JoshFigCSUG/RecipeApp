@@ -32,13 +32,13 @@ android {
 
     // FIX: Correct syntax for compileOptions closure
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
     // FIX: Correct syntax for kotlinOptions closure (jvmTarget is accepted inside this block)
     kotlinOptions {
-        jvmTarget = "11"
+        jvmTarget = "17"
     }
 
     buildFeatures {
