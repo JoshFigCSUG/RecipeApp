@@ -3,34 +3,31 @@ package com.csugprojects.recipeapp.ui.theme
 import androidx.compose.ui.graphics.Color
 
 // Denver Broncos Colors (Primary Palette)
-// Broncos Orange: #FB4F14 (Used for primary color in Light Theme)
 val BroncosOrange = Color(0xFFFB4F14)
-// Broncos Blue: #002244 (Used for primary color in Dark Theme)
 val BroncosBlueDark = Color(0xFF002244)
-// Accent White/Silver (Used for secondary/tertiary colors)
 val BroncosSilver = Color(0xFFC8C9CA)
 val BroncosWhite = Color(0xFFFFFFFF)
 
 // --- Default Light Theme Colors (Based on Broncos Palette) ---
-// Primary: The iconic orange
+// Primary color, used for buttons and key accents.
 val LightPrimary = BroncosOrange
-// Secondary: A dark blue/gray for subtle accent and container backgrounds
+// Secondary color, used for subtle accents and containers.
 val LightSecondary = Color(0xFF6B5848)
-// Tertiary: Used for high-contrast accents like the favorite icon tint
+// Tertiary color, used for high-contrast accents like the empty state icon.
 val LightTertiary = Color(0xFF8C7359)
-// Background: Clean white for high contrast
+// Screen background color.
 val LightBackground = BroncosWhite
-// Surface: Subtle off-white for cards/surfaces
+// Color for components like cards and surfaces.
 val LightSurface = Color(0xFFFCFCFC)
 
 // --- Default Dark Theme Colors (Lighter versions of Light Theme colors) ---
-// Primary: Lighter version of Broncos Orange (increased brightness)
+// Primary color for the dark theme, optimized for contrast.
 val DarkPrimary = Color(0xFFFC7A4E)
-// Secondary: Lighter version of the brown/gray secondary
+// Secondary color for dark theme accents.
 val DarkSecondary = Color(0xFF9D8370)
-// Tertiary: Lighter version of the brown tertiary
+// Tertiary color for dark theme accents.
 val DarkTertiary = Color(0xFFB39885)
-// Background: Deep dark background
+// Deep dark background color.
 val DarkBackground = Color(0xFF1C1B1F)
-// Surface: Slightly lighter dark gray for cards
+// Color for components like cards and surfaces in dark mode.
 val DarkSurface = Color(0xFF2C2B2F)
