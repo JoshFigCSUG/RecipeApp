@@ -19,19 +19,20 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import java.io.IOException
 
-// Use AndroidJUnit4 runner for instrumented tests
+// This Instrumented Test runs on an Android device/emulator to verify Room Database operations.
+// This supports the project's overall **Testing Strategy** (M8).
 @RunWith(AndroidJUnit4::class)
 @ExperimentalCoroutinesApi
 class RecipeDaoTest {
 
-    // Rule to execute architectural components instantly on the testing thread
+    // Ensures test operations run instantly and in order, crucial for testing Coroutines (Testing Strategy).
     @get:Rule
     val instantTaskExecutorRule = InstantTaskExecutorRule()
 
     private lateinit var recipeDao: RecipeDao
     private lateinit var db: RecipeDatabase
 
-    // --- Mock Data ---
+    // Mock data represents a Recipe Entity, which is the structure for **Data Persistence** (M4).
     private val mockIngredient = Ingredient("Tomato", "1 can")
     private val recipe1 = RecipeEntity(
         id = "52771",
@@ -56,9 +57,9 @@ class RecipeDaoTest {
     fun createDb() {
         val context = ApplicationProvider.getApplicationContext<Context>()
 
-        // 1. Create an in-memory database for testing (it's destroyed after the process finishes).
+        // Sets up an in-memory Room Database that is destroyed after testing.
+        // This isolates the tests for reliability (Testing Strategy).
         db = Room.inMemoryDatabaseBuilder(context, RecipeDatabase::class.java)
-            // Allow main thread access only for testing purposes
             .allowMainThreadQueries()
             .build()
         recipeDao = db.recipeDao()
@@ -67,93 +68,83 @@ class RecipeDaoTest {
     @After
     @Throws(IOException::class)
     fun closeDb() {
-        // 2. Close the database after each test
+        // Ensures the temporary database is closed after each test run (Testing Strategy).
         db.close()
     }
 
-    // -----------------------------------------------------------------
-    // --- 1. INSERTION TESTS (CORRECTED NAMES) ---
-    // -----------------------------------------------------------------
+    // --- INSERTION TESTS: Verifies adding new favorite recipes (M2 Feature/M4 Persistence) ---
 
     @Test
     fun insertRecipe_inserts_a_single_recipe_into_the_database() = runTest {
-        // WHEN: inserting the recipe
+        // Action: Inserts a single mock recipe.
         recipeDao.insertRecipe(recipe1)
 
-        // THEN: the recipe is present in the database Flow
+        // Assertion: Retrieves all data via Flow and checks that the item was successfully saved.
         val allRecipes = recipeDao.getAllFavoriteRecipes().first()
         assertEquals(1, allRecipes.size)
         assertEquals(recipe1.id, allRecipes.first().id)
-        // Verify complex field was correctly converted and stored
+        // Checks that complex fields (like the Ingredient list) are saved correctly using TypeConverters (M4 Design).
         assertEquals(recipe1.ingredients.first().name, allRecipes.first().ingredients.first().name)
     }
 
     @Test
     fun insertRecipe_replaces_existing_recipe_on_conflict() = runTest {
-        // GIVEN: two versions of the same recipe ID
+        // Setup: Creates a modified version of the same recipe ID.
         val updatedRecipe = recipe1.copy(title = "Updated Dish 1")
 
-        // WHEN: inserting the original, then the updated version
+        // Action: Inserts the original, then the updated version.
         recipeDao.insertRecipe(recipe1)
         recipeDao.insertRecipe(updatedRecipe)
 
-        // THEN: only one recipe exists, and it is the updated version
+        // Assertion: Confirms Room's REPLACE strategy worked, preventing duplicate IDs (Maintenance Plan).
         val allRecipes = recipeDao.getAllFavoriteRecipes().first()
         assertEquals(1, allRecipes.size)
         assertEquals("Updated Dish 1", allRecipes.first().title)
     }
 
-    // -----------------------------------------------------------------
-    // --- 2. DELETION TESTS (CORRECTED NAMES) ---
-    // -----------------------------------------------------------------
+    // --- DELETION TESTS: Verifies removing favorite recipes (M2/M4 Persistence) ---
 
     @Test
     fun deleteRecipeById_removes_the_correct_recipe() = runTest {
-        // GIVEN: two recipes are inserted
+        // Setup: Inserts two unique recipes.
         recipeDao.insertRecipe(recipe1)
         recipeDao.insertRecipe(recipe2)
         assertEquals(2, recipeDao.getAllFavoriteRecipes().first().size)
 
-        // WHEN: deleting recipe 1
+        // Action: Deletes the first recipe by its ID.
         recipeDao.deleteRecipeById(recipe1.id)
 
-        // THEN: only recipe 2 remains
+        // Assertion: Confirms only the second recipe remains in the database.
         val remainingRecipes = recipeDao.getAllFavoriteRecipes().first()
         assertEquals(1, remainingRecipes.size)
         assertEquals(recipe2.id, remainingRecipes.first().id)
     }
 
-    // -----------------------------------------------------------------
-    // --- 3. RETRIEVAL TESTS (Flow and Existence) (CORRECTED NAMES) ---
-    // -----------------------------------------------------------------
+    // --- RETRIEVAL TESTS: Verifies the integrity of the data stream (M4/M6 State Management) ---
 
     @Test
     fun getAllFavoriteRecipes_returns_empty_list_when_database_is_empty() = runTest {
-        // WHEN: fetching all recipes
+        // Action: Fetches all recipes when the database is fresh.
         val allRecipes = recipeDao.getAllFavoriteRecipes().first()
 
-        // THEN: the list is empty
+        // Assertion: Confirms the list is empty.
         assertTrue(allRecipes.isEmpty())
     }
 
     @Test
     fun isFavorite_returns_true_when_recipe_exists() = runTest {
-        // GIVEN: a recipe is inserted
+        // Setup: A recipe is saved as a favorite.
         recipeDao.insertRecipe(recipe1)
 
-        // WHEN: checking if it is a favorite
+        // Action/Assertion: Checks the `isFavorite` query for the saved recipe ID.
         val isFav = recipeDao.isFavorite(recipe1.id).first()
-
-        // THEN: result is true
         assertTrue(isFav)
     }
 
     @Test
     fun isFavorite_returns_false_when_recipe_does_not_exist() = runTest {
-        // WHEN: checking if a non-existent recipe is a favorite
+        // Action/Assertion: Checks the `isFavorite` query for a non-existent ID.
         val isFav = recipeDao.isFavorite("99999").first()
-
-        // THEN: result is false
         assertFalse(isFav)
     }
 }
