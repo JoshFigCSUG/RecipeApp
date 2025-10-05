@@ -23,27 +23,25 @@ import org.junit.Before
 import org.junit.Test
 import java.io.IOException
 
-// Use the Kotlin Coroutines Test API for reliable testing of suspend functions (Module 7).
+// This file contains Unit Tests for the Repository layer, supporting the overall Testing Strategy (Module 8).
 @ExperimentalCoroutinesApi
 class RecipeRepositoryImplTest {
 
-    // Mock dependencies required by the Repository
+    // Mock the API service to isolate the repository's logic (Testing Strategy).
     @MockK
     private lateinit var mockApiService: RecipeApiService
 
+    // Mock the local database DAO, which is responsible for persistence (Testing Strategy/Module 4).
     @MockK
     private lateinit var mockRecipeDao: RecipeDao
 
-    // Use a test dispatcher to control coroutine execution during testing
+    // Uses a test dispatcher for reliable coroutine execution, a requirement for modern Android testing.
     private val testDispatcher: TestDispatcher = StandardTestDispatcher()
 
-    // Class under test
+    // The class under test is the Recipe Repository implementation.
     private lateinit var repository: RecipeRepositoryImpl
 
-    // --- Mock Data Structures (simulating API response and desired output) ---
-
-    // A sample DTO object simulating a successful API response.
-    // All 40 ingredient/measure parameters must be explicitly defined (M4 DTO structure).
+    // Mock DTO simulates the raw data structure from the external API (Module 4 Design).
     private val mockMealDto = MealDto(
         idMeal = "100",
         strMeal = "Test Recipe",
@@ -56,7 +54,7 @@ class RecipeRepositoryImplTest {
         strIngredient2 = null,
         strMeasure2 = null,
 
-        // Explicitly defining remaining 36 parameters
+        // Placeholder fields for a full DTO structure (Module 4 Data Models).
         strIngredient3 = null, strMeasure3 = null,
         strIngredient4 = null, strMeasure4 = null,
         strIngredient5 = null, strMeasure5 = null,
@@ -77,7 +75,7 @@ class RecipeRepositoryImplTest {
         strIngredient20 = null, strMeasure20 = null,
     )
 
-    // The expected domain model after successful mapping from the DTO
+    // Expected Domain Model shows correct mapping from DTO (Module 4 Design).
     private val expectedRecipeDomain = Recipe(
         id = "100",
         title = "Test Recipe",
@@ -89,45 +87,43 @@ class RecipeRepositoryImplTest {
         isFavorite = false
     )
 
-    // The expected database entity
+    // Expected database entity for local persistence (Module 4 Persistence).
     private val expectedRecipeEntity = expectedRecipeDomain.toRecipeEntity()
 
 
     @Before
     fun setUp() {
-        // Initialize MockK annotations and the repository instance
+        // Initializes the mocked dependencies.
         MockKAnnotations.init(this, relaxed = true)
+        // Creates the repository instance for testing.
         repository = RecipeRepositoryImpl(mockApiService, mockRecipeDao)
     }
 
-    // -----------------------------------------------------------------
-    // --- 1. SEARCH RECIPES TESTS (Underscore Convention) ---
-    // -----------------------------------------------------------------
+    // This section verifies search functionality and data mapping (Testing Strategy).
 
     @Test
     fun searchRecipes_returns_Success_with_mapped_data_on_API_success() = runTest(testDispatcher) {
-        // GIVEN: Mock API returns a list of meals
+        // Arrange: API returns successful meal data.
         val mockMealListDto = MealListDto(meals = listOf(mockMealDto))
         coEvery { mockApiService.searchMeals(any()) } returns mockMealListDto
 
-        // WHEN: Calling the repository search function
+        // Act: Perform the search operation.
         val result = repository.searchRecipes("test")
 
-        // THEN: Result is a Success, and data is correctly mapped to the domain model
+        // Assert: Verify data is correctly mapped to the clean domain model.
         assertTrue(result is Result.Success)
-        assertEquals(1, (result as Result.Success).data.size)
-        assertEquals(expectedRecipeDomain, result.data.first())
+        assertEquals(expectedRecipeDomain, (result as Result.Success).data.first())
     }
 
     @Test
     fun searchRecipes_returns_Error_when_API_returns_no_meals() = runTest(testDispatcher) {
-        // GIVEN: Mock API returns a list wrapper with a null/empty meal list
+        // Arrange: API returns no results.
         coEvery { mockApiService.searchMeals(any()) } returns MealListDto(meals = emptyList())
 
-        // WHEN: Calling the repository search function
+        // Act: Perform the search.
         val result = repository.searchRecipes("no results")
 
-        // THEN: Result is an Error with the correct message (M4 Error Handling)
+        // Assert: Verify the custom "not found" error message is returned (Module 4 Error Handling).
         assertTrue(result is Result.Error)
         val errorMessage = (result as Result.Error).exception.message
         assertEquals("No recipes found for 'no results'", errorMessage)
@@ -135,90 +131,79 @@ class RecipeRepositoryImplTest {
 
     @Test
     fun searchRecipes_returns_Error_on_IOException_Network_Error() = runTest(testDispatcher) {
-        // GIVEN: Mock API throws an IOException (simulating no internet/timeout)
+        // Arrange: Mock API throws an exception simulating a network failure.
         coEvery { mockApiService.searchMeals(any()) } throws IOException("Network failed")
 
-        // WHEN: Calling the repository search function
+        // Act: Perform the search.
         val result = repository.searchRecipes("test")
 
-        // THEN: Result is an Error indicating a network issue (M4 Error Handling)
+        // Assert: Verify the generic network error is handled (Module 4 Error Handling/Maintenance Plan).
         assertTrue(result is Result.Error)
         val errorMessage = (result as Result.Error).exception.message
         assertTrue(errorMessage!!.startsWith("Network error:"))
     }
 
-    // -----------------------------------------------------------------
-    // --- 2. GET RECIPE DETAILS TESTS (Underscore Convention) ---
-    // -----------------------------------------------------------------
+    // This section verifies recipe detail fetching and error handling.
 
     @Test
     fun getRecipeDetails_returns_Success_with_single_mapped_recipe() = runTest(testDispatcher) {
-        // GIVEN: Mock API returns a single meal in a list wrapper
+        // Arrange: API returns a single meal detail.
         coEvery { mockApiService.getMealDetails(any()) } returns MealListDto(meals = listOf(mockMealDto))
 
-        // WHEN: Calling the repository for details
+        // Act: Fetch the recipe details.
         val result = repository.getRecipeDetails("100")
 
-        // THEN: Result is a Success with the single, correctly mapped domain object
+        // Assert: Verify the data mapping is correct.
         assertTrue(result is Result.Success)
         assertEquals(expectedRecipeDomain, (result as Result.Success).data)
     }
 
     @Test
     fun getRecipeDetails_returns_Error_when_recipe_ID_is_not_found() = runTest(testDispatcher) {
-        // GIVEN: Mock API returns a null/empty list, even on a lookup
+        // Arrange: API returns null meals, simulating an invalid ID.
         coEvery { mockApiService.getMealDetails(any()) } returns MealListDto(meals = null)
 
-        // WHEN: Calling the repository for details
+        // Act: Fetch the details for a non-existent ID.
         val result = repository.getRecipeDetails("999")
 
-        // THEN: Result is an Error indicating the item was not found
+        // Assert: Verify the specific "not found" error is returned (Module 4 Error Handling).
         assertTrue(result is Result.Error)
         val errorMessage = (result as Result.Error).exception.message
         assertEquals("Recipe not found for ID: 999", errorMessage)
     }
 
-    // -----------------------------------------------------------------
-    // --- 3. FAVORITES (DATABASE) TESTS (Underscore Convention) ---
-    // -----------------------------------------------------------------
+    // This section verifies local persistence operations for the Favorites feature.
 
     @Test
     fun addFavorite_calls_DAO_insert_with_correct_entity() = runTest(testDispatcher) {
-        // GIVEN: Mock DAO is ready
-        // WHEN: Calling addFavorite with the domain model
+        // Act: Call the repository to add a favorite.
         repository.addFavorite(expectedRecipeDomain)
 
-        // THEN: DAO's insertRecipe suspend function is called exactly once
-        // with the correctly mapped RecipeEntity
+        // Assert: Verify that the DAO received the correctly converted RecipeEntity (Module 4 Persistence).
         coVerify(exactly = 1) { mockRecipeDao.insertRecipe(expectedRecipeEntity) }
     }
 
     @Test
     fun removeFavorite_calls_DAO_deleteById() = runTest(testDispatcher) {
-        // GIVEN: Mock DAO is ready
-        // WHEN: Calling removeFavorite
+        // Act: Call the repository to remove a favorite.
         repository.removeFavorite("100")
 
-        // THEN: DAO's deleteRecipeById suspend function is called exactly once
-        // with the correct ID
+        // Assert: Verify that the DAO's deletion method was called with the correct ID.
         coVerify(exactly = 1) { mockRecipeDao.deleteRecipeById("100") }
     }
 
     @Test
     fun getFavoriteRecipes_emits_Flow_of_mapped_domain_models() = runTest(testDispatcher) {
-        // GIVEN: Mock DAO returns a Flow emitting a list of entities
+        // Arrange: DAO provides a reactive stream (Flow) of database entities.
         val entities = listOf(expectedRecipeEntity)
         coEvery { mockRecipeDao.getAllFavoriteRecipes() } returns flowOf(entities)
 
-        // WHEN: Collecting the Flow from the repository
+        // Act: Collect the first value from the repository's Flow.
         val resultFlow = repository.getFavoriteRecipes()
-
-        // THEN: The emitted value is a list of correctly mapped domain models
         val resultList = resultFlow.first()
-        assertEquals(1, resultList.size)
 
-        // Ensure the Flow successfully mapped the Entity to the Domain Model
+        // Assert: Verify the database entity was correctly mapped back to the domain model with 'isFavorite' set to true (Module 4 Persistence/Maintenance Plan).
+        assertEquals(1, resultList.size)
         assertEquals(expectedRecipeDomain.copy(isFavorite = true), resultList.first())
     }
-
 }
